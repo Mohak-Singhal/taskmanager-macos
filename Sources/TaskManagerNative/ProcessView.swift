@@ -169,22 +169,23 @@ struct ProcessView: View {
     private var sysNodes: [ProcessNode] { groupedNodes.filter { $0.category == .system } }
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: true) {
-            VStack(spacing: 0) {
-                
-                HStack(spacing: 0) {
-                    Button(action: { toggleSort(.name) }) {
-                        HStack(spacing: 2) {
-                            Text("Name").font(.system(size: 11, weight: .semibold))
-                            if sortColumn == .name {
-                                Image(systemName: sortAsc ? "chevron.up" : "chevron.down").font(.system(size: 8))
+        GeometryReader { geo in
+            ScrollView(.horizontal, showsIndicators: true) {
+                VStack(spacing: 0) {
+                    
+                    HStack(spacing: 0) {
+                        Button(action: { toggleSort(.name) }) {
+                            HStack(spacing: 2) {
+                                Text("Name").font(.system(size: 11, weight: .semibold))
+                                if sortColumn == .name {
+                                    Image(systemName: sortAsc ? "chevron.up" : "chevron.down").font(.system(size: 8))
+                                }
                             }
                         }
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundColor(tc)
-                    .frame(width: nameWidth, alignment: .leading)
-                    .padding(.leading, 24)
+                        .buttonStyle(.plain)
+                        .foregroundColor(tc)
+                        .frame(minWidth: nameWidth, maxWidth: .infinity, alignment: .leading)
+                        .padding(.leading, 56)
                     
                     ResizableDivider(width: $nameWidth, minWidth: 150)
                     
@@ -274,7 +275,9 @@ struct ProcessView: View {
                     }
                 }
             }
-            .frame(width: totalColumnsWidth)
+            .frame(minWidth: max(totalColumnsWidth, geo.size.width), maxWidth: .infinity)
+            .frame(height: geo.size.height)
+        }
         }
         .background(cs == .dark ? Color(hex: "2B2B2B") : Color.white)
         .onChange(of: monitor.processes) { _, newList in
@@ -549,7 +552,7 @@ struct SectionHeaderView: View {
                 Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                     .font(.system(size: 9, weight: .bold))
                     .foregroundColor(.gray)
-                    .frame(width: 12)
+                    .frame(width: 14)
                 
                 Image(systemName: icon)
                     .font(.system(size: 11))
@@ -561,7 +564,7 @@ struct SectionHeaderView: View {
                 
                 Spacer()
             }
-            .padding(.horizontal, 10)
+            .padding(.leading, 12)
             .padding(.vertical, 5)
             .background(cs == .dark ? Color(hex: "222222") : Color(hex: "F2F2F2"))
         }
@@ -581,11 +584,12 @@ struct HeaderCell: View {
     var cs: ColorScheme
     
     var body: some View {
-        VStack(spacing: 1) {
+        VStack(alignment: .trailing, spacing: 1) {
             Text(title).font(.system(size: 11, weight: .bold)).foregroundColor(tc)
             Text(val).font(.system(size: 9)).foregroundColor(.gray).monospacedDigit()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
+        .padding(.trailing, 8)
         .background(headerHeatmapBg(ratio: ratio, cs: cs))
         .border(Color.gray.opacity(0.12))
     }
@@ -628,7 +632,9 @@ struct ProcessRowItem: View {
     var body: some View {
         HStack(spacing: 0) {
             
-            HStack(spacing: 4) {
+            HStack(spacing: 0) {
+                Spacer().frame(width: 12)
+                
                 if isChild {
                     Spacer().frame(width: 20)
                 }
@@ -638,15 +644,19 @@ struct ProcessRowItem: View {
                         Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                             .font(.system(size: 9, weight: .bold))
                             .foregroundColor(.gray)
-                            .frame(width: 14)
+                            .frame(width: 14, height: 14)
                     }
                     .buttonStyle(.plain)
                 } else {
                     Spacer().frame(width: 14)
                 }
                 
+                Spacer().frame(width: 6)
+                
                 AppIconView(processName: process.name)
                     .frame(width: 16, height: 16)
+                
+                Spacer().frame(width: 8)
                 
                 VStack(alignment: .leading, spacing: 1) {
                     HStack(alignment: .center, spacing: 6) {
@@ -686,7 +696,7 @@ struct ProcessRowItem: View {
                     }
                 }
             }
-            .frame(width: nameWidth, alignment: .leading)
+            .frame(minWidth: nameWidth, maxWidth: .infinity, alignment: .leading)
 
             Spacer().frame(width: 4)
             
@@ -695,7 +705,7 @@ struct ProcessRowItem: View {
                 .monospacedDigit()
                 .foregroundColor(cpuText(cpu))
                 .frame(width: cpuWidth, alignment: .trailing)
-                .padding(.trailing, 6)
+                .padding(.trailing, 8)
                 .frame(maxHeight: .infinity)
                 .background(heatmapBg(val: cpu, maxVal: 100.0))
 
@@ -705,7 +715,7 @@ struct ProcessRowItem: View {
                 .font(.system(size: 11))
                 .monospacedDigit()
                 .frame(width: memoryWidth, alignment: .trailing)
-                .padding(.trailing, 6)
+                .padding(.trailing, 8)
                 .frame(maxHeight: .infinity)
                 .background(heatmapBg(val: Double(memory), maxVal: Double(totalMemorySystem) * 0.15))
 
@@ -715,7 +725,7 @@ struct ProcessRowItem: View {
                 .font(.system(size: 11))
                 .monospacedDigit()
                 .frame(width: vmCompressedWidth, alignment: .trailing)
-                .padding(.trailing, 6)
+                .padding(.trailing, 8)
                 .frame(maxHeight: .infinity)
                 .background(heatmapBg(val: Double(vmCompressed), maxVal: Double(totalMemorySystem) * 0.10))
 
@@ -725,7 +735,7 @@ struct ProcessRowItem: View {
                 .font(.system(size: 11))
                 .monospacedDigit()
                 .frame(width: realMemoryWidth, alignment: .trailing)
-                .padding(.trailing, 6)
+                .padding(.trailing, 8)
                 .frame(maxHeight: .infinity)
                 .background(heatmapBg(val: Double(realMemory), maxVal: Double(totalMemorySystem) * 0.12))
             
@@ -735,7 +745,7 @@ struct ProcessRowItem: View {
                 .font(.system(size: 11))
                 .monospacedDigit()
                 .frame(width: diskWidth, alignment: .trailing)
-                .padding(.trailing, 6)
+                .padding(.trailing, 8)
                 .frame(maxHeight: .infinity)
                 .background(heatmapBg(val: disk, maxVal: 10.0 * 1024 * 1024))
 
@@ -745,7 +755,7 @@ struct ProcessRowItem: View {
                 .font(.system(size: 11))
                 .monospacedDigit()
                 .frame(width: networkWidth, alignment: .trailing)
-                .padding(.trailing, 6)
+                .padding(.trailing, 8)
                 .frame(maxHeight: .infinity)
                 .background(heatmapBg(val: network, maxVal: 2.0 * 1024 * 1024))
         }
