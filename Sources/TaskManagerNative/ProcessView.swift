@@ -8,6 +8,8 @@ struct ProcessNode: Identifiable {
     
     var totalCPU: Double
     var totalMemory: UInt64
+    var totalRealMemory: UInt64
+    var totalVMCompressed: UInt64
     var totalDisk: Double
     var totalNetwork: Double
     
@@ -30,7 +32,7 @@ struct ProcessView: View {
     @State private var confirmKillName: String = ""
     @State private var selectedPropertiesProcess: MachProcess? = nil
 
-    enum SortColumn { case name, cpu, memory, disk, network, pid }
+    enum SortColumn { case name, cpu, memory, realMemory, vmCompressed, disk, network, pid }
 
     private var tc: Color { cs == .dark ? .white : .black }
     private var bg: Color { cs == .dark ? Color(hex: "1E1E1E") : Color(hex: "F4F4F4") }
@@ -93,6 +95,8 @@ struct ProcessView: View {
                 
                 let totalCPU = proc.cpu + children.reduce(0) { $0 + $1.cpu }
                 let totalMemory = proc.memory + children.reduce(0) { $0 + $1.memory }
+                let totalRealMemory = proc.realMemory + children.reduce(0) { $0 + $1.realMemory }
+                let totalVMCompressed = proc.vmCompressed + children.reduce(0) { $0 + $1.vmCompressed }
                 let totalDisk = (proc.diskReadRate + proc.diskWriteRate) + children.reduce(0) { $0 + ($1.diskReadRate + $1.diskWriteRate) }
                 let totalNetwork = (proc.networkRxRate + proc.networkTxRate) + children.reduce(0) { $0 + ($1.networkRxRate + $1.networkTxRate) }
                 
@@ -110,6 +114,8 @@ struct ProcessView: View {
                     children: children.sorted { $0.cpu > $1.cpu },
                     totalCPU: totalCPU,
                     totalMemory: totalMemory,
+                    totalRealMemory: totalRealMemory,
+                    totalVMCompressed: totalVMCompressed,
                     totalDisk: totalDisk,
                     totalNetwork: totalNetwork,
                     category: category
@@ -125,6 +131,10 @@ struct ProcessView: View {
                 return sortAsc ? node1.totalCPU < node2.totalCPU : node1.totalCPU > node2.totalCPU
             case .memory:
                 return sortAsc ? node1.totalMemory < node2.totalMemory : node1.totalMemory > node2.totalMemory
+            case .realMemory:
+                return sortAsc ? node1.totalRealMemory < node2.totalRealMemory : node1.totalRealMemory > node2.totalRealMemory
+            case .vmCompressed:
+                return sortAsc ? node1.totalVMCompressed < node2.totalVMCompressed : node1.totalVMCompressed > node2.totalVMCompressed
             case .disk:
                 return sortAsc ? node1.totalDisk < node2.totalDisk : node1.totalDisk > node2.totalDisk
             case .network:
@@ -168,6 +178,16 @@ struct ProcessView: View {
                 HeaderCell(title: "Memory", val: String(format: "%d%%", Int(memUsed / memTotal * 100.0)), ratio: memUsed / memTotal, tc: tc, accent: accent, cs: cs)
                     .frame(width: 85)
                     .onTapGesture { toggleSort(.memory) }
+                
+                let compUsed = Double(monitor.memory.compressed)
+                HeaderCell(title: "VM Compressed", val: formatWinMem(monitor.memory.compressed), ratio: compUsed / memTotal, tc: tc, accent: accent, cs: cs)
+                    .frame(width: 90)
+                    .onTapGesture { toggleSort(.vmCompressed) }
+                
+                let realUsed = Double(monitor.memory.used >= monitor.memory.compressed ? monitor.memory.used - monitor.memory.compressed : monitor.memory.used)
+                HeaderCell(title: "Real Mem", val: formatWinMem(UInt64(realUsed)), ratio: realUsed / memTotal, tc: tc, accent: accent, cs: cs)
+                    .frame(width: 85)
+                    .onTapGesture { toggleSort(.realMemory) }
                 
                 
                 HeaderCell(title: "Disk", val: bytesPerSec(totalDiskRate), ratio: min(totalDiskRate / (20 * 1024 * 1024), 1.0), tc: tc, accent: accent, cs: cs)
@@ -283,6 +303,8 @@ struct ProcessView: View {
             isExpanded: expandedPIDs.contains(node.process.pid),
             cpu: node.totalCPU,
             memory: node.totalMemory,
+            realMemory: node.totalRealMemory,
+            vmCompressed: node.totalVMCompressed,
             disk: node.totalDisk,
             network: node.totalNetwork,
             isChild: false,
@@ -324,6 +346,8 @@ struct ProcessView: View {
                     isExpanded: false,
                     cpu: child.cpu,
                     memory: child.memory,
+                    realMemory: child.realMemory,
+                    vmCompressed: child.vmCompressed,
                     disk: child.diskReadRate + child.diskWriteRate,
                     network: child.networkRxRate + child.networkTxRate,
                     isChild: true,
@@ -538,6 +562,8 @@ struct ProcessRowItem: View {
     var isExpanded: Bool
     var cpu: Double
     var memory: UInt64
+    var realMemory: UInt64
+    var vmCompressed: UInt64
     var disk: Double
     var network: Double
     var isChild: Bool
@@ -629,6 +655,22 @@ struct ProcessRowItem: View {
                 .padding(.trailing, 6)
                 .frame(maxHeight: .infinity)
                 .background(heatmapBg(val: Double(memory), maxVal: Double(totalMemorySystem) * 0.15))
+
+            Text(formatWinMem(vmCompressed))
+                .font(.system(size: 11))
+                .monospacedDigit()
+                .frame(width: 90, alignment: .trailing)
+                .padding(.trailing, 6)
+                .frame(maxHeight: .infinity)
+                .background(heatmapBg(val: Double(vmCompressed), maxVal: Double(totalMemorySystem) * 0.10))
+
+            Text(formatWinMem(realMemory))
+                .font(.system(size: 11))
+                .monospacedDigit()
+                .frame(width: 85, alignment: .trailing)
+                .padding(.trailing, 6)
+                .frame(maxHeight: .infinity)
+                .background(heatmapBg(val: Double(realMemory), maxVal: Double(totalMemorySystem) * 0.12))
 
             
             Text(bytesPerSec(disk))

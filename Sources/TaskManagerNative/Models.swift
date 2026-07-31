@@ -73,6 +73,8 @@ struct MachProcess: Identifiable, Hashable {
     var name: String
     var cpu: Double
     var memory: UInt64
+    var realMemory: UInt64 = 0
+    var vmCompressed: UInt64 = 0
     var threads: Int
     
     var diskReadBytes: UInt64 = 0

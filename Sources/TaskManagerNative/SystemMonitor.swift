@@ -1161,6 +1161,19 @@ class SystemMonitor: ObservableObject {
             }
             let resolvedName = resolveAppBundleName(execPath: execPath, defaultName: name)
 
+            let processMemory: UInt64
+            let realMem: UInt64
+            let compressedMem: UInt64
+            if rusageRet == 0 {
+                processMemory = rusage.ri_phys_footprint
+                realMem = rusage.ri_resident_size
+                compressedMem = rusage.ri_phys_footprint > rusage.ri_resident_size ? (rusage.ri_phys_footprint - rusage.ri_resident_size) : 0
+            } else {
+                processMemory = ti.pti_resident_size
+                realMem = ti.pti_resident_size
+                compressedMem = 0
+            }
+
             result.append(MachProcess(
                 pid: pid,
                 ppid: ppid,
@@ -1168,7 +1181,9 @@ class SystemMonitor: ObservableObject {
                 username: username,
                 name: resolvedName,
                 cpu: pct,
-                memory: ti.pti_resident_size,
+                memory: processMemory,
+                realMemory: realMem,
+                vmCompressed: compressedMem,
                 threads: Int(ti.pti_threadnum),
                 diskReadBytes: diskReadBytes,
                 diskWriteBytes: diskWriteBytes,
