@@ -46,7 +46,7 @@ struct GPUDetailView: View {
                     .foregroundColor(tc)
                 Spacer()
                 Text(gpuName)
-                    .font(.system(size: 11))
+                    .font(.system(size: 12))
                     .foregroundColor(.gray)
                     .lineLimit(1)
             }
@@ -55,9 +55,9 @@ struct GPUDetailView: View {
             
             VStack(spacing: 0) {
                 HStack {
-                    Text("GPU utilization").font(.system(size: 9)).foregroundColor(.gray)
+                    Text("GPU utilization").font(.system(size: 12)).foregroundColor(.gray)
                     Spacer()
-                    Text("100%").font(.system(size: 9)).foregroundColor(.gray)
+                    Text("100%").font(.system(size: 12)).foregroundColor(.gray)
                 }
                 .padding(.bottom, 3)
 
@@ -83,7 +83,7 @@ struct GPUDetailView: View {
                 .chartYAxis {
                     AxisMarks(values: .stride(by: 25)) { _ in
                         AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(gridColor)
-                        AxisValueLabel().font(.system(size: 8)).foregroundStyle(.gray)
+                        AxisValueLabel().font(.system(size: 12)).foregroundStyle(.gray)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -92,9 +92,9 @@ struct GPUDetailView: View {
                 .border(Color.gray.opacity(0.2), width: 1)
 
                 HStack {
-                    Text("60 seconds").font(.system(size: 9)).foregroundColor(.gray)
+                    Text("60 seconds").font(.system(size: 12)).foregroundColor(.gray)
                     Spacer()
-                    Text("0").font(.system(size: 9)).foregroundColor(.gray)
+                    Text("0").font(.system(size: 12)).foregroundColor(.gray)
                 }
                 .padding(.top, 3)
             }
@@ -121,7 +121,7 @@ struct GPUDetailView: View {
                     infoRow("Metal support:", metalVer)
                     infoRow("Physical location:", physLoc)
                 }
-                .frame(width: 210, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(.horizontal, 16)
@@ -135,7 +135,7 @@ struct GPUDetailView: View {
 
     private func statPill(_ label: String, _ val: String, large: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text(label).font(.system(size: 10)).foregroundColor(.gray).lineLimit(1)
+            Text(label).font(.system(size: 12)).foregroundColor(.gray).lineLimit(1)
             Text(val)
                 .font(.system(size: large ? 26 : 18, weight: .light))
                 .foregroundColor(tc).lineLimit(1).minimumScaleFactor(0.6)
@@ -144,9 +144,9 @@ struct GPUDetailView: View {
 
     private func infoRow(_ label: String, _ value: String) -> some View {
         HStack(spacing: 4) {
-            Text(label).font(.system(size: 10)).foregroundColor(.gray)
+            Text(label).font(.system(size: 12)).foregroundColor(.gray)
                 .lineLimit(1).minimumScaleFactor(0.75).frame(minWidth: 100, alignment: .leading)
-            Text(value).font(.system(size: 10)).foregroundColor(tc)
+            Text(value).font(.system(size: 12)).foregroundColor(tc)
                 .lineLimit(1).minimumScaleFactor(0.75)
             Spacer(minLength: 0)
         }

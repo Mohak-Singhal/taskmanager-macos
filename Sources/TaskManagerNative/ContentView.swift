@@ -37,12 +37,11 @@ struct ContentView: View {
     @State private var selectedPID: pid_t? = nil
     
     @State private var showRunDialog = false
-    @State private var showCommandPalette = false
     @State private var runCommand = ""
     @State private var isSidebarExpanded = false
-    @State private var efficiencyModeEnabled = false
     @State private var confirmKillPID: pid_t? = nil
     @State private var confirmKillName: String = ""
+    @FocusState private var searchFocused: Bool
 
     private var bg: Color { cs == .dark ? Color(hex: "202020") : Color(hex: "F3F3F3") }
     private var accent: Color { Color(hex: "0078D7") }
@@ -101,15 +100,6 @@ struct ContentView: View {
         .onAppear {
             setupNativeWindow()
         }
-        .overlay {
-            if showCommandPalette {
-                Color.black.opacity(0.4)
-                    .ignoresSafeArea()
-                    .onTapGesture { showCommandPalette = false }
-                CommandPaletteView(isPresented: $showCommandPalette, selectedTab: $selectedTab, selectedPID: $selectedPID)
-                    .environmentObject(monitor)
-            }
-        }
         .sheet(isPresented: $showRunDialog) {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Create New Task")
@@ -166,11 +156,11 @@ struct ContentView: View {
         } message: {
             Text(monitor.actionError ?? "")
         }
-    }
-
-    private func toggleEfficiencyMode(_ enabled: Bool) {
-        efficiencyModeEnabled = enabled
-        monitor.setEfficiencyMode(enabled)
+        .background(
+            Button("") { searchFocused = true }
+                .keyboardShortcut("f", modifiers: [.command])
+                .hidden()
+        )
     }
 
     private func launchRunTask(_ cmd: String) {
@@ -212,6 +202,7 @@ struct ContentView: View {
                         .frame(width: 28, height: 28)
                 }
                 .buttonStyle(.plain)
+                .help("Toggle sidebar")
 
                 Text(currentTabTitle)
                     .font(.system(size: 14, weight: .bold))
@@ -225,60 +216,31 @@ struct ContentView: View {
             
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 10))
+                    .font(.system(size: 11))
                     .foregroundColor(.gray)
                 TextField("Type to search...", text: $searchText)
                     .textFieldStyle(.plain)
                     .font(.system(size: 11))
                     .foregroundColor(cs == .dark ? .white : .black)
+                    .focused($searchFocused)
                 if !searchText.isEmpty {
                     Button(action: { searchText = "" }) {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 10))
+                            .font(.system(size: 11))
                             .foregroundColor(.gray)
                     }
                     .buttonStyle(.plain)
+                    .help("Clear search")
                 }
             }
             .padding(.horizontal, 8)
-            .frame(width: 180, height: 26)
+            .frame(width: 200, height: D.Control.height)
             .background(cs == .dark ? Color(hex: "333333") : Color.white)
-            .cornerRadius(4)
+            .cornerRadius(D.Radius.control)
             .overlay(
-                RoundedRectangle(cornerRadius: 4)
+                RoundedRectangle(cornerRadius: D.Radius.control)
                     .stroke(Color.gray.opacity(0.25), lineWidth: 0.5)
             )
-
-            
-            Button(action: { showCommandPalette.toggle() }) {
-                HStack(spacing: 4) {
-                    Image(systemName: "command")
-                    Text("Cmd+K")
-                }
-                .font(.system(size: 10, weight: .semibold))
-                .padding(.horizontal, 6)
-                .padding(.vertical, 4)
-                .background(Color.gray.opacity(0.18))
-                .cornerRadius(4)
-                .foregroundColor(tc)
-            }
-            .buttonStyle(.plain)
-            .keyboardShortcut("k", modifiers: .command)
-
-            Button(action: { NotificationCenter.default.post(name: .showRunDialog, object: nil) }) {
-                HStack(spacing: 4) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 10, weight: .bold))
-                    Text("Run new task")
-                        .font(.system(size: 11))
-                }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(cs == .dark ? Color(hex: "333333") : Color.white)
-                .border(Color.gray.opacity(0.3), width: 0.5)
-                .cornerRadius(3)
-            }
-            .buttonStyle(.plain)
 
             Button(action: {
                 if let pid = selectedPID, let proc = monitor.processes.first(where: { $0.pid == pid }) {
@@ -288,57 +250,21 @@ struct ContentView: View {
             }) {
                 HStack(spacing: 4) {
                     Image(systemName: "xmark.square")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.system(size: 11, weight: .bold))
                     Text("End task")
                         .font(.system(size: 11, weight: .medium))
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
+                .frame(height: D.Control.height)
+                .padding(.horizontal, 12)
                 .background(selectedPID != nil ? (cs == .dark ? Color(hex: "C42B1C") : Color(hex: "FDF3F2")) : (cs == .dark ? Color(hex: "3A3A3A") : Color(hex: "FFFFFF")))
                 .foregroundColor(selectedPID != nil ? (cs == .dark ? .white : Color(hex: "C42B1C")) : .gray)
                 .border(selectedPID != nil ? (cs == .dark ? Color.clear : Color(hex: "F8C0BC")) : Color.gray.opacity(0.3), width: 0.5)
-                .cornerRadius(3)
+                .cornerRadius(D.Radius.control)
             }
             .buttonStyle(.plain)
             .disabled(selectedPID == nil)
-
-            Button(action: { toggleEfficiencyMode(!efficiencyModeEnabled) }) {
-                HStack(spacing: 4) {
-                    Image(systemName: "leaf")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(efficiencyModeEnabled ? .green : .gray)
-                    Text("Efficiency mode")
-                        .font(.system(size: 11))
-                }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(efficiencyModeEnabled ? (cs == .dark ? Color.green.opacity(0.2) : Color.green.opacity(0.1)) : (cs == .dark ? Color(hex: "333333") : Color.white))
-                .border(Color.gray.opacity(0.3), width: 0.5)
-                .cornerRadius(3)
-            }
-            .buttonStyle(.plain)
-
-            
-            Button(action: {
-                monitor.setAlwaysOnTop(!monitor.alwaysOnTop)
-            }) {
-                HStack(spacing: 4) {
-                    Image(systemName: monitor.alwaysOnTop ? "pin.fill" : "pin")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(monitor.alwaysOnTop ? accent : .gray)
-                    Text("Always on top")
-                        .font(.system(size: 11))
-                }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(monitor.alwaysOnTop ? (cs == .dark ? Color.blue.opacity(0.2) : Color.blue.opacity(0.1)) : (cs == .dark ? Color(hex: "333333") : Color.white))
-                .border(Color.gray.opacity(0.3), width: 0.5)
-                .cornerRadius(3)
-            }
-            .buttonStyle(.plain)
-            .help("Toggle compact always-on-top window mode")
         }
-        .padding(.trailing, 12)
+        .padding(.horizontal, D.Padding.screen)
         .padding(.vertical, 8)
         .background(VisualEffectView(material: .headerView, blendingMode: .behindWindow, state: .active))
     }
@@ -413,7 +339,7 @@ struct SidebarNavItem: View {
                     ? (cs == .dark ? Color.white.opacity(0.08) : Color.black.opacity(0.06))
                     : (isHovered ? (cs == .dark ? Color.white.opacity(0.04) : Color.black.opacity(0.03)) : Color.clear)
             )
-            .cornerRadius(4)
+            .cornerRadius(D.Radius.control)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -493,19 +419,19 @@ struct SidebarNavItem: View {
             
             VStack(alignment: .leading, spacing: 1) {
                 Text(title)
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.system(size: 12, weight: .bold))
                     .foregroundColor(tc)
                     .lineLimit(1)
                 
                 if let desc = description {
                     Text(desc)
-                        .font(.system(size: 9))
+                        .font(.system(size: 12))
                         .foregroundColor(.gray)
                         .lineLimit(1)
                 }
                 
                 Text(val)
-                    .font(.system(size: 9))
+                    .font(.system(size: 12))
                     .foregroundColor(isSelected ? tc : .gray)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -516,7 +442,7 @@ struct SidebarNavItem: View {
         .padding(.vertical, 5)
         .frame(minWidth: 198, maxWidth: 198, minHeight: 62)
         .background(isSelected ? (cs == .dark ? Color(hex: "3A3A3A") : Color(hex: "E5E5E5")) : Color.clear)
-        .cornerRadius(3)
+        .cornerRadius(D.Radius.control)
         .overlay(
             alignment: .leading
         ) {
@@ -527,7 +453,7 @@ struct SidebarNavItem: View {
             }
         }
         .overlay(
-            RoundedRectangle(cornerRadius: 3)
+            RoundedRectangle(cornerRadius: D.Radius.control)
                 .stroke(isSelected ? (cs == .dark ? Color.white.opacity(0.8) : Color.black.opacity(0.8)) : Color.clear, lineWidth: 1.0)
         )
         .clipped()
@@ -641,58 +567,79 @@ struct DetailsRow: View {
     var setPrio: (pid_t, Int32) -> Void
     @State private var isHovered = false
 
+    @AppStorage("showDetailsColumnPID") private var showDetailsColumnPID = true
+    @AppStorage("showDetailsColumnStatus") private var showDetailsColumnStatus = true
+    @AppStorage("showDetailsColumnUser") private var showDetailsColumnUser = true
+    @AppStorage("showDetailsColumnCPU") private var showDetailsColumnCPU = true
+    @AppStorage("showDetailsColumnMemory") private var showDetailsColumnMemory = true
+    @AppStorage("showDetailsColumnThreads") private var showDetailsColumnThreads = true
+
     var body: some View {
         HStack(spacing: 0) {
+            Spacer().frame(width: 28)
+            
             HStack(spacing: 6) {
                 AppIconView(processName: proc.name)
                     .frame(width: 14, height: 14)
                 Text(proc.name)
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .lineLimit(1)
             }
             .frame(minWidth: 180, maxWidth: .infinity, alignment: .leading)
             .padding(.leading, 8)
             
-            Text(String(proc.pid))
-                .font(.system(size: 11))
-                .monospacedDigit()
-                .frame(width: 60, alignment: .trailing)
-            
-            HStack {
-                Text(proc.threads > 0 ? "Running" : "Suspended")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(proc.threads > 0 ? Color(hex: "107C41") : .gray)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(proc.threads > 0 ? Color(hex: "DFF6DD") : Color.gray.opacity(0.15))
-                    .cornerRadius(8)
+            if showDetailsColumnPID {
+                Text(String(proc.pid))
+                    .font(.system(size: 12))
+                    .monospacedDigit()
+                    .frame(width: 60, alignment: .trailing)
             }
-            .frame(width: 80, alignment: .leading)
-            .padding(.leading, 8)
             
-            Text(proc.username)
-                .font(.system(size: 11))
-                .foregroundColor(.gray)
-                .lineLimit(1)
-                .frame(width: 100, alignment: .leading)
+            if showDetailsColumnStatus {
+                HStack {
+                    Text(proc.threads > 0 ? "Running" : "Suspended")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(proc.threads > 0 ? Color(hex: "107C41") : .gray)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(proc.threads > 0 ? Color(hex: "DFF6DD") : Color.gray.opacity(0.15))
+                        .cornerRadius(8)
+                }
+                .frame(width: 80, alignment: .leading)
                 .padding(.leading, 8)
+            }
             
-            Text(String(format: "%.1f%%", proc.cpu))
-                .font(.system(size: 11, weight: proc.cpu > 50 ? .bold : .regular))
-                .monospacedDigit()
-                .foregroundColor(proc.cpu > 50 ? Color(hex: "CC0000") : .primary)
-                .frame(width: 70, alignment: .trailing)
+            if showDetailsColumnUser {
+                Text(proc.username)
+                    .font(.system(size: 12))
+                    .foregroundColor(.gray)
+                    .lineLimit(1)
+                    .frame(width: 100, alignment: .leading)
+                    .padding(.leading, 8)
+            }
             
-            Text(formatWinMem(proc.memory))
-                .font(.system(size: 11))
-                .monospacedDigit()
-                .frame(width: 80, alignment: .trailing)
+            if showDetailsColumnCPU {
+                Text(String(format: "%.1f%%", proc.cpu))
+                    .font(.system(size: 12, weight: proc.cpu > 50 ? .bold : .regular))
+                    .monospacedDigit()
+                    .foregroundColor(proc.cpu > 50 ? Color(hex: "CC0000") : .primary)
+                    .frame(width: 70, alignment: .trailing)
+            }
             
-            Text("\(proc.threads)")
-                .font(.system(size: 11))
-                .monospacedDigit()
-                .frame(width: 60, alignment: .trailing)
-                .padding(.trailing, 8)
+            if showDetailsColumnMemory {
+                Text(formatWinMem(proc.memory))
+                    .font(.system(size: 12))
+                    .monospacedDigit()
+                    .frame(width: 80, alignment: .trailing)
+            }
+            
+            if showDetailsColumnThreads {
+                Text("\(proc.threads)")
+                    .font(.system(size: 12))
+                    .monospacedDigit()
+                    .frame(width: 60, alignment: .trailing)
+                    .padding(.trailing, 8)
+            }
         }
         .padding(.vertical, 3)
         .contentShape(Rectangle())
@@ -723,6 +670,14 @@ struct DetailsView: View {
     @Binding var selectedPID: pid_t?
     var accent: Color
     var cs: ColorScheme
+    
+    @AppStorage("showDetailsColumnPID") private var showDetailsColumnPID = true
+    @AppStorage("showDetailsColumnStatus") private var showDetailsColumnStatus = true
+    @AppStorage("showDetailsColumnUser") private var showDetailsColumnUser = true
+    @AppStorage("showDetailsColumnCPU") private var showDetailsColumnCPU = true
+    @AppStorage("showDetailsColumnMemory") private var showDetailsColumnMemory = true
+    @AppStorage("showDetailsColumnThreads") private var showDetailsColumnThreads = true
+
     @State private var sortCol = 0
     @State private var sortAsc = false
     @State private var confirmKillPID: pid_t?
@@ -751,7 +706,7 @@ struct DetailsView: View {
                 
                 HStack(spacing: 6) {
                     Image(systemName: "magnifyingglass")
-                        .font(.system(size: 10))
+                        .font(.system(size: 11))
                         .foregroundColor(.gray)
                     TextField("Filter by name or PID", text: $searchText)
                         .textFieldStyle(.plain)
@@ -760,18 +715,19 @@ struct DetailsView: View {
                     if !searchText.isEmpty {
                         Button(action: { searchText = "" }) {
                             Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 10))
+                                .font(.system(size: 11))
                                 .foregroundColor(.gray)
                         }
                         .buttonStyle(.plain)
+                        .help("Clear search")
                     }
                 }
                 .padding(.horizontal, 8)
-                .frame(width: 220, height: 24)
+                .frame(width: 220, height: D.Control.height)
                 .background(cs == .dark ? Color(hex: "333333") : Color.white)
-                .cornerRadius(4)
+                .cornerRadius(D.Radius.control)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: D.Radius.control)
                         .stroke(Color.gray.opacity(0.3), lineWidth: 0.5)
                 )
                 
@@ -790,7 +746,7 @@ struct DetailsView: View {
                 .background(selectedPID != nil ? (cs == .dark ? Color(hex: "C42B1C") : Color(hex: "FDF3F2")) : (cs == .dark ? Color(hex: "3A3A3A") : Color(hex: "FFFFFF")))
                 .foregroundColor(selectedPID != nil ? (cs == .dark ? .white : Color(hex: "C42B1C")) : .gray)
                 .border(selectedPID != nil ? (cs == .dark ? Color.clear : Color(hex: "F8C0BC")) : Color.gray.opacity(0.3), width: 0.5)
-                .cornerRadius(3)
+                .cornerRadius(D.Radius.control)
                 .disabled(selectedPID == nil)
             }
             .padding(.horizontal, 12)
@@ -839,21 +795,58 @@ struct DetailsView: View {
 
     private var headerContent: some View {
         HStack(spacing: 0) {
+            Menu {
+                Toggle("PID", isOn: $showDetailsColumnPID)
+                Toggle("Status", isOn: $showDetailsColumnStatus)
+                Toggle("User Name", isOn: $showDetailsColumnUser)
+                Toggle("CPU", isOn: $showDetailsColumnCPU)
+                Toggle("Memory", isOn: $showDetailsColumnMemory)
+                Toggle("Threads", isOn: $showDetailsColumnThreads)
+            } label: {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.system(size: 12))
+                    .foregroundColor(.gray)
+            }
+            .menuStyle(.borderlessButton)
+            .frame(width: 20)
+            .padding(.leading, 8)
+
             sortBtn("Name", 0).frame(minWidth: 180, maxWidth: .infinity, alignment: .leading).padding(.leading, 8)
-            sortBtn("PID", 1).frame(width: 60, alignment: .trailing)
-            sortBtn("Status", 2).frame(width: 80, alignment: .leading).padding(.leading, 8)
-            sortBtn("User name", 3).frame(width: 100, alignment: .leading).padding(.leading, 8)
-            sortBtn("CPU", 4).frame(width: 70, alignment: .trailing)
-            sortBtn("Memory", 5).frame(width: 80, alignment: .trailing)
-            sortBtn("Threads", 6).frame(width: 60, alignment: .trailing).padding(.trailing, 8)
+            
+            if showDetailsColumnPID {
+                sortBtn("PID", 1).frame(width: 60, alignment: .trailing)
+            }
+            if showDetailsColumnStatus {
+                sortBtn("Status", 2).frame(width: 80, alignment: .leading).padding(.leading, 8)
+            }
+            if showDetailsColumnUser {
+                sortBtn("User name", 3).frame(width: 100, alignment: .leading).padding(.leading, 8)
+            }
+            if showDetailsColumnCPU {
+                sortBtn("CPU", 4).frame(width: 70, alignment: .trailing)
+            }
+            if showDetailsColumnMemory {
+                sortBtn("Memory", 5).frame(width: 80, alignment: .trailing)
+            }
+            if showDetailsColumnThreads {
+                sortBtn("Threads", 6).frame(width: 60, alignment: .trailing).padding(.trailing, 8)
+            }
         }
         .frame(height: 32)
         .background(cs == .dark ? Color(hex: "232323") : Color(hex: "EDEDED"))
+        .contextMenu {
+            Toggle("PID", isOn: $showDetailsColumnPID)
+            Toggle("Status", isOn: $showDetailsColumnStatus)
+            Toggle("User Name", isOn: $showDetailsColumnUser)
+            Toggle("CPU", isOn: $showDetailsColumnCPU)
+            Toggle("Memory", isOn: $showDetailsColumnMemory)
+            Toggle("Threads", isOn: $showDetailsColumnThreads)
+        }
     }
 
     private func sortBtn(_ label: String, _ col: Int) -> some View {
         Button(action: { if sortCol == col { sortAsc.toggle() } else { sortCol = col; sortAsc = false } }) {
-            HStack(spacing: 2) { Text(label); if sortCol == col { Image(systemName: sortAsc ? "chevron.up" : "chevron.down").font(.system(size: 8)) } }
+            HStack(spacing: 2) { Text(label); if sortCol == col { Image(systemName: sortAsc ? "chevron.up" : "chevron.down").font(.system(size: 11)) } }
         }.buttonStyle(.plain).foregroundColor(sortCol == col ? accent : .gray)
     }
 

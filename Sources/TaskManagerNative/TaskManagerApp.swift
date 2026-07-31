@@ -62,19 +62,6 @@ struct TaskManagerApp: App {
                     Button("Paused")        { monitor.setUpdateInterval(0.0) }
                 }
             }
-
-            
-            CommandGroup(replacing: .undoRedo) { }
-            CommandGroup(replacing: .pasteboard) { }
-            CommandGroup(replacing: .windowList) { }
-            CommandGroup(replacing: .windowArrangement) { }
-            CommandGroup(replacing: .help) {
-                Button("TaskManager Native Help") {
-                    if let url = URL(string: "https://support.apple.com") {
-                        NSWorkspace.shared.open(url)
-                    }
-                }
-            }
         }
     }
 }
@@ -88,13 +75,14 @@ final class MenuBarController: NSObject {
         guard statusItem == nil else { return }
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem?.button {
-            button.title = "⚡ CPU: 0% RAM: 0%"
+            button.image = NSImage(systemSymbolName: "cpu", accessibilityDescription: "CPU")
+            button.title = " CPU: 0% RAM: 0%"
         }
     }
 
     func update(cpu: Double, mem: Double) {
         if let button = statusItem?.button {
-            button.title = String(format: "⚡ CPU: %.0f%% RAM: %.0f%%", cpu, mem)
+            button.title = String(format: " CPU: %.0f%% RAM: %.0f%%", cpu, mem)
         }
     }
 }

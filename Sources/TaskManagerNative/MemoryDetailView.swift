@@ -26,7 +26,7 @@ struct MemoryDetailView: View {
                     .foregroundColor(tc)
                 Spacer()
                 Text("\(formatWinMem(m.used)) used of \(formatWinMem(m.total))")
-                    .font(.system(size: 11))
+                    .font(.system(size: 12))
                     .foregroundColor(.gray)
             }
             .padding(.bottom, 8)
@@ -34,9 +34,9 @@ struct MemoryDetailView: View {
             
             VStack(spacing: 0) {
                 HStack {
-                    Text("Memory usage").font(.system(size: 9)).foregroundColor(.gray)
+                    Text("Memory usage").font(.system(size: 12)).foregroundColor(.gray)
                     Spacer()
-                    Text("100%").font(.system(size: 9)).foregroundColor(.gray)
+                    Text("100%").font(.system(size: 12)).foregroundColor(.gray)
                 }
                 .padding(.bottom, 3)
 
@@ -62,7 +62,7 @@ struct MemoryDetailView: View {
                 .chartYAxis {
                     AxisMarks(values: .stride(by: 25)) { _ in
                         AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(gridColor)
-                        AxisValueLabel().font(.system(size: 8)).foregroundStyle(.gray)
+                        AxisValueLabel().font(.system(size: 12)).foregroundStyle(.gray)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -71,9 +71,9 @@ struct MemoryDetailView: View {
                 .border(Color.gray.opacity(0.2), width: 1)
 
                 HStack {
-                    Text("60 seconds").font(.system(size: 9)).foregroundColor(.gray)
+                    Text("60 seconds").font(.system(size: 12)).foregroundColor(.gray)
                     Spacer()
-                    Text("0").font(.system(size: 9)).foregroundColor(.gray)
+                    Text("0").font(.system(size: 12)).foregroundColor(.gray)
                 }
                 .padding(.top, 3)
             }
@@ -96,7 +96,7 @@ struct MemoryDetailView: View {
                         statPill("Compressed", formatWinMem(m.compressed))
                         
                         VStack(alignment: .leading, spacing: 1) {
-                            Text("Memory Pressure").font(.system(size: 10)).foregroundColor(.gray).lineLimit(1)
+                            Text("Memory Pressure").font(.system(size: 12)).foregroundColor(.gray).lineLimit(1)
                             HStack(spacing: 5) {
                                 Circle()
                                     .fill(pressureColor(m.pressureLevel))
@@ -114,7 +114,7 @@ struct MemoryDetailView: View {
                     infoRow("Slots used:", slotsUsed)
                     infoRow("Form factor:", formFactor)
                 }
-                .frame(width: 210, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(.horizontal, 16)
@@ -128,7 +128,7 @@ struct MemoryDetailView: View {
 
     private func statPill(_ label: String, _ val: String, large: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text(label).font(.system(size: 10)).foregroundColor(.gray).lineLimit(1)
+            Text(label).font(.system(size: 12)).foregroundColor(.gray).lineLimit(1)
             Text(val)
                 .font(.system(size: large ? 22 : 16, weight: .light))
                 .foregroundColor(tc).lineLimit(1).minimumScaleFactor(0.6)
@@ -137,9 +137,9 @@ struct MemoryDetailView: View {
 
     private func infoRow(_ label: String, _ value: String) -> some View {
         HStack(spacing: 4) {
-            Text(label).font(.system(size: 10)).foregroundColor(.gray)
+            Text(label).font(.system(size: 12)).foregroundColor(.gray)
                 .lineLimit(1).minimumScaleFactor(0.75).frame(minWidth: 110, alignment: .leading)
-            Text(value).font(.system(size: 10)).foregroundColor(tc)
+            Text(value).font(.system(size: 12)).foregroundColor(tc)
                 .lineLimit(1).minimumScaleFactor(0.75)
             Spacer(minLength: 0)
         }

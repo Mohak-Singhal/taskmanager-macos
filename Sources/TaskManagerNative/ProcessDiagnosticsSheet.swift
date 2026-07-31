@@ -59,7 +59,7 @@ struct ProcessDiagnosticsSheet: View {
                     VStack(spacing: 8) {
                         ScrollView {
                             Text(outputText)
-                                .font(.system(size: 10, design: .monospaced))
+                                .font(.system(size: 11, design: .monospaced))
                                 .textSelection(.enabled)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(8)

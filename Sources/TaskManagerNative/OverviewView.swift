@@ -60,7 +60,7 @@ struct OverviewView: View {
             }
 
             Text(subtitle)
-                .font(.system(size: 10))
+                .font(.system(size: 11))
                 .foregroundColor(.gray)
                 .lineLimit(1)
 
@@ -77,9 +77,9 @@ struct OverviewView: View {
             .chartYAxis(.hidden)
             .frame(height: 50)
         }
-        .padding(12)
+        .padding(D.Padding.card)
         .background(cs == .dark ? Color(hex: "202020") : Color(hex: "F8F8F8"))
-        .cornerRadius(6)
+        .cornerRadius(D.Radius.card)
         .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.gray.opacity(0.2), lineWidth: 0.5))
     }
 }

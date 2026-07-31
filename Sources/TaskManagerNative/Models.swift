@@ -72,6 +72,8 @@ struct MachProcess: Identifiable, Hashable {
     var username: String = ""
     var name: String
     var cpu: Double
+    var userCPU: Double = 0
+    var systemCPU: Double = 0
     var memory: UInt64
     var realMemory: UInt64 = 0
     var vmCompressed: UInt64 = 0
@@ -154,6 +156,7 @@ struct PowerSourceStatus {
 struct StartupItem: Identifiable {
     var id: String { plistPath }
     var name: String
+    var bundleID: String
     var publisher: String
     var status: String 
     var impact: String 

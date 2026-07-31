@@ -75,7 +75,7 @@ class SystemMonitor: ObservableObject {
     private var lastDiskIOPollTime: Date = Date()
     private var lastProcessSampleDate = Date()
 
-    nonisolated(unsafe) private var prevProcessCPU: [pid_t: UInt64] = [:]
+    nonisolated(unsafe) private var prevProcessCPU: [pid_t: (user: UInt64, system: UInt64)] = [:]
     nonisolated(unsafe) private var prevProcessDisk: [pid_t: (read: UInt64, write: UInt64)] = [:]
     nonisolated(unsafe) private var prevProcessWakeups: [pid_t: (interrupt: UInt64, idle: UInt64)] = [:]
     // Cumulative bytes from nettop (for App History totals)
@@ -1038,7 +1038,7 @@ class SystemMonitor: ObservableObject {
         }
         let cmdMap = cachedCmdMap
 
-        var newPrev: [pid_t: UInt64] = [:]
+        var newPrev: [pid_t: (user: UInt64, system: UInt64)] = [:]
         var nextProcessDisk: [pid_t: (read: UInt64, write: UInt64)] = [:]
         var result: [MachProcess] = []
 
@@ -1073,14 +1073,26 @@ class SystemMonitor: ObservableObject {
             let name = String(decoding: Data(bytes: nb, count: strnlen(nb, nb.count)), as: UTF8.self).trimmingCharacters(in: .whitespaces)
             guard !name.isEmpty else { continue }
 
-            let totalTicks = ti.pti_total_user + ti.pti_total_system
-            newPrev[pid] = totalTicks
+            let userTicks = ti.pti_total_user
+            let systemTicks = ti.pti_total_system
+            newPrev[pid] = (user: userTicks, system: systemTicks)
 
             let pct: Double
-            if let prev = prevProcessCPU[pid], totalTicks > prev {
-                pct = Self.cpuPercent(deltaTicks: totalTicks - prev, elapsedSeconds: elapsedSeconds)
+            let userPct: Double
+            let systemPct: Double
+            if let prev = prevProcessCPU[pid] {
+                let dUser = userTicks >= prev.user ? userTicks - prev.user : 0
+                let dSys = systemTicks >= prev.system ? systemTicks - prev.system : 0
+                let delta = dUser + dSys
+                if delta > 0 {
+                    pct = Self.cpuPercent(deltaTicks: delta, elapsedSeconds: elapsedSeconds)
+                    userPct = Self.cpuPercent(deltaTicks: dUser, elapsedSeconds: elapsedSeconds)
+                    systemPct = Self.cpuPercent(deltaTicks: dSys, elapsedSeconds: elapsedSeconds)
+                } else {
+                    pct = 0; userPct = 0; systemPct = 0
+                }
             } else {
-                pct = 0
+                pct = 0; userPct = 0; systemPct = 0
             }
 
             
@@ -1181,6 +1193,8 @@ class SystemMonitor: ObservableObject {
                 username: username,
                 name: resolvedName,
                 cpu: pct,
+                userCPU: userPct,
+                systemCPU: systemPct,
                 memory: processMemory,
                 realMemory: realMem,
                 vmCompressed: compressedMem,
@@ -1558,6 +1572,36 @@ class SystemMonitor: ObservableObject {
 
     
  
+    nonisolated private static func extractFriendlyName(label: String, dict: [String: Any]) -> String {
+        var programPath = dict["Program"] as? String
+        if programPath == nil, let args = dict["ProgramArguments"] as? [String], !args.isEmpty {
+            programPath = args[0]
+        }
+        
+        if let path = programPath, !path.isEmpty {
+            if let range = path.range(of: ".app") {
+                let appPath = String(path[..<range.upperBound])
+                let appName = (appPath as NSString).lastPathComponent.replacingOccurrences(of: ".app", with: "")
+                if !appName.isEmpty {
+                    return appName
+                }
+            }
+        }
+        
+        let parts = label.components(separatedBy: ".")
+        if parts.count >= 2 {
+            let last = parts.last!
+            let genericSuffixes = ["agent", "daemon", "helper", "service", "privhelper", "wake", "wake.system", "socket", "vmnetd", "vmnets"]
+            if genericSuffixes.contains(last.lowercased()) && parts.count >= 3 {
+                let prev = parts[parts.count - 2]
+                return "\(prev.replacingOccurrences(of: "-", with: " ").capitalized) \(last.replacingOccurrences(of: "-", with: " ").capitalized)"
+            }
+            return last.replacingOccurrences(of: "-", with: " ").capitalized
+        }
+        
+        return label
+    }
+
     func pollStartupItems() {
         DispatchQueue.global(qos: .background).async { [weak self] in
             guard let self = self else { return }
@@ -1597,7 +1641,8 @@ class SystemMonitor: ObservableObject {
                     else if label.contains("postgresql") || label.contains("mysql") { impact = "High" }
                     else { impact = "Low" }
                     
-                    items.append(StartupItem(name: label, publisher: publisher, status: status, impact: impact, plistPath: fullPath))
+                    let friendlyName = Self.extractFriendlyName(label: label, dict: dict)
+                    items.append(StartupItem(name: friendlyName, bundleID: label, publisher: publisher, status: status, impact: impact, plistPath: fullPath))
                 }
             }
             DispatchQueue.main.async { [weak self] in

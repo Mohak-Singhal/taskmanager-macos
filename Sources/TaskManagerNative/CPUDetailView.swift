@@ -17,7 +17,7 @@ struct CPUDetailView: View {
                         .font(.system(size: 20, weight: .bold))
                         .foregroundColor(tc)
                     Text(m.cpuBrand)
-                        .font(.system(size: 11))
+                        .font(.system(size: 12))
                         .foregroundColor(.gray)
                         .lineLimit(1)
                 }
@@ -36,65 +36,74 @@ struct CPUDetailView: View {
             VStack(spacing: 0) {
                 HStack {
                     if viewLogicalProcessors {
-                        Text("% Utilization per logical processor").font(.system(size: 9, weight: .semibold)).foregroundColor(.gray)
+                        Text("% Utilization per logical processor").font(.system(size: 12, weight: .semibold)).foregroundColor(.gray)
                     } else {
                         HStack(spacing: 12) {
-                            Text("% Utilization").font(.system(size: 9, weight: .semibold)).foregroundColor(.gray)
+                            Text("% Utilization").font(.system(size: 12, weight: .semibold)).foregroundColor(.gray)
                             HStack(spacing: 4) {
                                 Circle().fill(accent).frame(width: 6, height: 6)
-                                Text("Total: \(Int(m.cpuUsage.total))%").font(.system(size: 9, weight: .bold)).foregroundColor(tc)
+                                Text("Total: \(Int(m.cpuUsage.total))%").font(.system(size: 12, weight: .bold)).foregroundColor(tc)
                             }
                             HStack(spacing: 4) {
                                 Circle().fill(Color.purple).frame(width: 6, height: 6)
-                                Text("User: \(Int(m.cpuUsage.user))%").font(.system(size: 9)).foregroundColor(.gray)
+                                Text("User: \(Int(m.cpuUsage.user))%").font(.system(size: 12)).foregroundColor(.gray)
                             }
                             HStack(spacing: 4) {
                                 Circle().fill(Color.orange).frame(width: 6, height: 6)
-                                Text("System: \(Int(m.cpuUsage.system))%").font(.system(size: 9)).foregroundColor(.gray)
+                                Text("System: \(Int(m.cpuUsage.system))%").font(.system(size: 12)).foregroundColor(.gray)
                             }
                         }
                     }
                     Spacer()
-                    Text("100%").font(.system(size: 9)).foregroundColor(.gray)
+                    Text("100%").font(.system(size: 12)).foregroundColor(.gray)
                 }
                 .padding(.bottom, 3)
 
                 if viewLogicalProcessors {
                     let colCount = min(max(m.cpuCores / 2, 2), 4)
                     let cols = Array(repeating: GridItem(.flexible(), spacing: 4), count: colCount)
-                    ScrollView(.vertical, showsIndicators: true) {
-                        LazyVGrid(columns: cols, spacing: 6) {
-                            ForEach(0..<m.perCoreCPUHistory.count, id: \.self) { idx in
-                                VStack(alignment: .leading, spacing: 2) {
-                                    HStack {
-                                        Text("CPU \(idx)").font(.system(size: 8, weight: .bold)).foregroundColor(.gray)
-                                        Spacer()
-                                        Text("\(Int(m.perCoreCPUHistory[idx].last ?? 0))%").font(.system(size: 8)).foregroundColor(.gray)
-                                    }
-                                    Chart {
-                                        let history = m.perCoreCPUHistory[idx]
-                                        ForEach(Array(history.enumerated()), id: \.offset) { i, v in
-                                            AreaMark(x: .value("t", i), y: .value("v", v))
-                                                .foregroundStyle(LinearGradient(
-                                                    colors: [accent.opacity(0.25), accent.opacity(0.02)],
-                                                    startPoint: .top, endPoint: .bottom))
+                    GeometryReader { geo in
+                        ScrollView(.vertical, showsIndicators: true) {
+                            let numCores = m.perCoreCPUHistory.count
+                            let rowCount = max(1, Int(ceil(Double(numCores) / Double(colCount))))
+                            let spacingSum = CGFloat(rowCount - 1) * 6
+                            let calculatedHeight = (geo.size.height - spacingSum - 4) / CGFloat(rowCount)
+                            let cellHeight = max(52, calculatedHeight)
+                            
+                            LazyVGrid(columns: cols, spacing: 6) {
+                                ForEach(0..<numCores, id: \.self) { idx in
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        HStack {
+                                            Text("CPU \(idx)").font(.system(size: 12, weight: .bold)).foregroundColor(.gray)
+                                            Spacer()
+                                            Text("\(Int(m.perCoreCPUHistory[idx].last ?? 0))%").font(.system(size: 12)).foregroundColor(.gray)
                                         }
-                                        ForEach(Array(history.enumerated()), id: \.offset) { i, v in
-                                            LineMark(x: .value("t", i), y: .value("v", v))
-                                                .foregroundStyle(accent)
-                                                .lineStyle(StrokeStyle(lineWidth: 1.0))
+                                        Chart {
+                                            let history = m.perCoreCPUHistory[idx]
+                                            ForEach(Array(history.enumerated()), id: \.offset) { i, v in
+                                                AreaMark(x: .value("t", i), y: .value("v", v))
+                                                    .foregroundStyle(LinearGradient(
+                                                        colors: [accent.opacity(0.25), accent.opacity(0.02)],
+                                                        startPoint: .top, endPoint: .bottom))
+                                            }
+                                            ForEach(Array(history.enumerated()), id: \.offset) { i, v in
+                                                LineMark(x: .value("t", i), y: .value("v", v))
+                                                    .foregroundStyle(accent)
+                                                    .lineStyle(StrokeStyle(lineWidth: 1.0))
+                                            }
                                         }
+                                        .chartYScale(domain: 0...100)
+                                        .chartXAxis(.hidden)
+                                        .chartYAxis(.hidden)
+                                        .frame(height: max(28, cellHeight - 16))
+                                        .background(chartBg)
+                                        .border(Color.gray.opacity(0.2), width: 0.5)
                                     }
-                                    .chartYScale(domain: 0...100)
-                                    .chartXAxis(.hidden)
-                                    .chartYAxis(.hidden)
-                                    .frame(height: 52)
-                                    .background(chartBg)
-                                    .border(Color.gray.opacity(0.2), width: 0.5)
+                                    .frame(height: cellHeight)
                                 }
                             }
+                            .padding(2)
                         }
-                        .padding(2)
                     }
                 } else {
                     Chart {
@@ -147,7 +156,7 @@ struct CPUDetailView: View {
                         AxisMarks(values: .stride(by: 25)) { _ in
                             AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
                                 .foregroundStyle(gridColor)
-                            AxisValueLabel().font(.system(size: 8)).foregroundStyle(.gray)
+                            AxisValueLabel().font(.system(size: 12)).foregroundStyle(.gray)
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)  
@@ -157,9 +166,9 @@ struct CPUDetailView: View {
                 }
 
                 HStack {
-                    Text("60 seconds").font(.system(size: 9)).foregroundColor(.gray)
+                    Text("60 seconds").font(.system(size: 12)).foregroundColor(.gray)
                     Spacer()
-                    Text("0").font(.system(size: 9)).foregroundColor(.gray)
+                    Text("0").font(.system(size: 12)).foregroundColor(.gray)
                 }
                 .padding(.top, 3)
             }
@@ -173,6 +182,8 @@ struct CPUDetailView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(alignment: .bottom, spacing: 24) {
                         statPill("Utilization", "\(Int(m.cpuUsage.total))%", large: true)
+                        statPill("User CPU", "\(Int(m.cpuUsage.user))%", large: true)
+                        statPill("System CPU", "\(Int(m.cpuUsage.system))%", large: true)
                         statPill("Speed", activeSpeedString(), large: true)
                     }
                     HStack(alignment: .bottom, spacing: 24) {
@@ -188,7 +199,9 @@ struct CPUDetailView: View {
                     HStack(alignment: .bottom, spacing: 24) {
                         statPill("CPU Temperature", m.cpuTemperature > 0 ? String(format: "%.1f°C", m.cpuTemperature) : "N/A")
                         statPill("GPU Temperature", m.gpuTemperature > 0 ? String(format: "%.1f°C", m.gpuTemperature) : "N/A")
-                        statPill("System Fan Speed", m.fanSpeed > 0 ? "\(Int(m.fanSpeed)) RPM" : "0 RPM (Passive)")
+                        if m.fanSpeed > 0 {
+                            statPill("System Fan Speed", "\(Int(m.fanSpeed)) RPM")
+                        }
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -204,7 +217,7 @@ struct CPUDetailView: View {
                     infoRow("L2 cache:", m.l2Cache)
                     infoRow("L3 cache:", m.l3Cache)
                 }
-                .frame(width: 210, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(.horizontal, 16)
@@ -231,7 +244,7 @@ struct CPUDetailView: View {
 
     private func statPill(_ label: String, _ val: String, large: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text(label).font(.system(size: 10)).foregroundColor(.gray).lineLimit(1)
+            Text(label).font(.system(size: 12)).foregroundColor(.gray).lineLimit(1)
             Text(val)
                 .font(.system(size: large ? 26 : 18, weight: .light))
                 .foregroundColor(tc).lineLimit(1).minimumScaleFactor(0.6)
@@ -240,9 +253,9 @@ struct CPUDetailView: View {
 
     private func infoRow(_ label: String, _ value: String) -> some View {
         HStack(spacing: 4) {
-            Text(label).font(.system(size: 10)).foregroundColor(.gray)
+            Text(label).font(.system(size: 12)).foregroundColor(.gray)
                 .lineLimit(1).minimumScaleFactor(0.75).frame(minWidth: 100, alignment: .leading)
-            Text(value).font(.system(size: 10)).foregroundColor(tc)
+            Text(value).font(.system(size: 12)).foregroundColor(tc)
                 .lineLimit(1).minimumScaleFactor(0.75)
             Spacer(minLength: 0)
         }

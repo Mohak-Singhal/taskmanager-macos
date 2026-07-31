@@ -33,20 +33,21 @@ struct StartupView: View {
             
             HStack(spacing: 12) {
                 HStack(spacing: 6) {
-                    Image(systemName: "magnifyingglass").font(.system(size: 10)).foregroundColor(.gray)
+                    Image(systemName: "magnifyingglass").font(.system(size: 11)).foregroundColor(.gray)
                     TextField("Search startup apps", text: $searchText).textFieldStyle(.plain).font(.system(size: 11))
                     if !searchText.isEmpty {
                         Button(action: { searchText = "" }) {
-                            Image(systemName: "xmark.circle.fill").font(.system(size: 10)).foregroundColor(.gray)
+                            Image(systemName: "xmark.circle.fill").font(.system(size: 11)).foregroundColor(.gray)
                         }
                         .buttonStyle(.plain)
+                        .help("Clear search")
                     }
                 }
                 .padding(.horizontal, 8)
-                .frame(width: 220, height: 24)
+                .frame(width: 220, height: D.Control.height)
                 .background(cs == .dark ? Color(hex: "333333") : Color.white)
-                .cornerRadius(4)
-                .overlay(RoundedRectangle(cornerRadius: 4).stroke(Color.gray.opacity(0.3), lineWidth: 0.5))
+                .cornerRadius(D.Radius.control)
+                .overlay(RoundedRectangle(cornerRadius: D.Radius.control).stroke(Color.gray.opacity(0.3), lineWidth: 0.5))
 
                 Spacer()
 
@@ -63,7 +64,7 @@ struct StartupView: View {
                     .padding(.vertical, 4)
                     .background(Color(hex: "0078D7"))
                     .foregroundColor(.white)
-                    .cornerRadius(3)
+                    .cornerRadius(D.Radius.control)
                 }
             }
             .padding(.horizontal, 12)
@@ -72,7 +73,7 @@ struct StartupView: View {
 
             
             HStack(spacing: 0) {
-                sortBtn("Name", 0).frame(minWidth: 220, alignment: .leading).padding(.leading, 12)
+                sortBtn("Name", 0).frame(width: 260, alignment: .leading).padding(.leading, 12)
                 sortBtn("Publisher", 1).frame(width: 150, alignment: .leading)
                 sortBtn("Status", 2).frame(width: 100, alignment: .leading)
                 sortBtn("Startup impact", 3).frame(width: 120, alignment: .leading)
@@ -89,13 +90,20 @@ struct StartupView: View {
                     HStack(spacing: 0) {
                         HStack(spacing: 8) {
                             AppIconView(processName: item.name)
-                                .frame(width: 16, height: 16)
-                            Text(item.name)
-                                .font(.system(size: 12, weight: .medium))
-                                .lineLimit(1)
+                                .frame(width: 18, height: 18)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(item.name)
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundColor(tc)
+                                    .lineLimit(1)
+                                Text(item.bundleID)
+                                    .font(.system(size: 9))
+                                    .foregroundColor(.gray)
+                                    .lineLimit(1)
+                            }
                         }
-                        .frame(minWidth: 220, alignment: .leading)
-                        .padding(.leading, 4)
+                        .frame(width: 260, alignment: .leading)
+                        .padding(.leading, 12)
 
                         Text(item.publisher)
                             .font(.system(size: 11))
@@ -106,7 +114,7 @@ struct StartupView: View {
                         
                         HStack {
                             Text(item.status)
-                                .font(.system(size: 10, weight: .semibold))
+                                .font(.system(size: 11, weight: .semibold))
                                 .foregroundColor(item.status == "Enabled" ? Color(hex: "107C41") : .gray)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 2)
@@ -118,7 +126,7 @@ struct StartupView: View {
                         
                         HStack {
                             Text(item.impact)
-                                .font(.system(size: 10, weight: .medium))
+                                .font(.system(size: 11, weight: .medium))
                                 .foregroundColor(impactColor(item.impact))
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 2)
@@ -166,7 +174,7 @@ struct StartupView: View {
             HStack(spacing: 2) {
                 Text(label).font(.system(size: 11, weight: .semibold))
                 if sortCol == col {
-                    Image(systemName: sortAsc ? "chevron.up" : "chevron.down").font(.system(size: 8))
+                    Image(systemName: sortAsc ? "chevron.up" : "chevron.down").font(.system(size: 11))
                 }
             }
         }

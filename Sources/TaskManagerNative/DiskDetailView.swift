@@ -35,7 +35,7 @@ struct DiskDetailView: View {
                         .foregroundColor(tc)
                     Spacer()
                     Text(disk.mediaType)
-                        .font(.system(size: 11))
+                        .font(.system(size: 12))
                         .foregroundColor(.gray)
                 }
                 .padding(.bottom, 8)
@@ -46,9 +46,9 @@ struct DiskDetailView: View {
                     
                     VStack(spacing: 0) {
                         HStack {
-                            Text("Active time").font(.system(size: 9)).foregroundColor(.gray)
+                            Text("Active time").font(.system(size: 12)).foregroundColor(.gray)
                             Spacer()
-                            Text("100%").font(.system(size: 9)).foregroundColor(.gray)
+                            Text("100%").font(.system(size: 12)).foregroundColor(.gray)
                         }
                         .padding(.bottom, 3)
 
@@ -71,7 +71,7 @@ struct DiskDetailView: View {
                         .chartYAxis {
                             AxisMarks(values: .stride(by: 25)) { _ in
                                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(gridColor)
-                                AxisValueLabel().font(.system(size: 8)).foregroundStyle(.gray)
+                                AxisValueLabel().font(.system(size: 12)).foregroundStyle(.gray)
                             }
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -84,9 +84,9 @@ struct DiskDetailView: View {
                     
                     VStack(spacing: 0) {
                         HStack {
-                            Text("Disk transfer rate").font(.system(size: 9)).foregroundColor(.gray)
+                            Text("Disk transfer rate").font(.system(size: 12)).foregroundColor(.gray)
                             Spacer()
-                            Text(String(format: "%.0f MB/s", rateMax)).font(.system(size: 9)).foregroundColor(.gray)
+                            Text(String(format: "%.0f MB/s", rateMax)).font(.system(size: 12)).foregroundColor(.gray)
                         }
                         .padding(.bottom, 3)
 
@@ -107,7 +107,7 @@ struct DiskDetailView: View {
                         .chartYAxis {
                             AxisMarks(values: .stride(by: rateMax / 4)) { _ in
                                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(gridColor)
-                                AxisValueLabel().font(.system(size: 8)).foregroundStyle(.gray)
+                                AxisValueLabel().font(.system(size: 12)).foregroundStyle(.gray)
                             }
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -142,7 +142,7 @@ struct DiskDetailView: View {
                         infoRow("Page file:", disk.device == "/" ? "Yes" : "No")
                         infoRow("Type:", disk.mediaType)
                     }
-                    .frame(width: 210, alignment: .leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
             } else {
@@ -161,7 +161,7 @@ struct DiskDetailView: View {
 
     private func statPill(_ label: String, _ val: String, large: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text(label).font(.system(size: 10)).foregroundColor(.gray).lineLimit(1)
+            Text(label).font(.system(size: 12)).foregroundColor(.gray).lineLimit(1)
             Text(val)
                 .font(.system(size: large ? 26 : 18, weight: .light))
                 .foregroundColor(tc).lineLimit(1).minimumScaleFactor(0.6)
@@ -170,9 +170,9 @@ struct DiskDetailView: View {
 
     private func infoRow(_ label: String, _ value: String) -> some View {
         HStack(spacing: 4) {
-            Text(label).font(.system(size: 10)).foregroundColor(.gray)
+            Text(label).font(.system(size: 12)).foregroundColor(.gray)
                 .lineLimit(1).minimumScaleFactor(0.75).frame(minWidth: 100, alignment: .leading)
-            Text(value).font(.system(size: 10)).foregroundColor(tc)
+            Text(value).font(.system(size: 12)).foregroundColor(tc)
                 .lineLimit(1).minimumScaleFactor(0.75)
             Spacer(minLength: 0)
         }

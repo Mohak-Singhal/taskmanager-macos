@@ -184,7 +184,7 @@ struct InsightsView: View {
                     Text("Growth Today").frame(width: 100, alignment: .trailing)
                     Text("Growth This Week").frame(minWidth: 100, alignment: .trailing)
                 }
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(size: 11, weight: .semibold))
                 .foregroundColor(subText)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
@@ -204,7 +204,7 @@ struct InsightsView: View {
                                 Text(item.displayName)
                                     .font(.system(size: 11, weight: .medium))
                                 Text(item.path)
-                                    .font(.system(size: 8))
+                                    .font(.system(size: 11))
                                     .foregroundColor(.gray)
                                     .lineLimit(1)
                                     .truncationMode(.middle)
@@ -271,12 +271,12 @@ struct InsightsView: View {
                                     Text(item.name)
                                         .font(.system(size: 11, weight: .medium))
                                     Text("PID \(item.pid) • \(item.assertionType)")
-                                        .font(.system(size: 9))
+                                        .font(.system(size: 11))
                                         .foregroundColor(.gray)
                                 }
                                 Spacer()
                                 Text(item.detail)
-                                    .font(.system(size: 10))
+                                    .font(.system(size: 11))
                                     .foregroundColor(subText)
                                     .lineLimit(1)
                             }
@@ -306,7 +306,7 @@ struct InsightsView: View {
                         Text("CPU %").frame(width: 80, alignment: .trailing)
                         Text("Memory").frame(width: 90, alignment: .trailing)
                     }
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(subText)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
@@ -332,7 +332,7 @@ struct InsightsView: View {
                                     .frame(minWidth: 150, maxWidth: .infinity, alignment: .leading)
                                 
                                 Text(tab.processName)
-                                    .font(.system(size: 10))
+                                    .font(.system(size: 11))
                                     .foregroundColor(.gray)
                                     .lineLimit(1)
                                     .frame(width: 100, alignment: .leading)
@@ -392,12 +392,12 @@ struct InsightsView: View {
                                     Text(alert.appName)
                                         .font(.system(size: 11, weight: .semibold))
                                     Text("Destination: \(alert.destination)")
-                                        .font(.system(size: 9))
+                                        .font(.system(size: 11))
                                         .foregroundColor(.gray)
                                 }
                                 Spacer()
                                 Text(alert.frequencyDescription)
-                                    .font(.system(size: 10))
+                                    .font(.system(size: 11))
                                     .foregroundColor(.red)
                             }
                             .padding(.horizontal, 12)
@@ -424,7 +424,7 @@ struct InsightsView: View {
                         Text("Application").frame(minWidth: 150, maxWidth: .infinity, alignment: .leading)
                         Text("Uploaded Today").frame(width: 150, alignment: .trailing)
                     }
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(subText)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
@@ -477,7 +477,7 @@ struct InsightsView: View {
                         Text("Protocol").frame(width: 60, alignment: .leading)
                         Text("Destination Host").frame(minWidth: 150, maxWidth: .infinity, alignment: .leading)
                     }
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(subText)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
@@ -503,7 +503,7 @@ struct InsightsView: View {
                                     .frame(width: 150, alignment: .leading)
                                 
                                 Text(log.protocolType)
-                                    .font(.system(size: 10))
+                                    .font(.system(size: 11))
                                     .foregroundColor(.gray)
                                     .frame(width: 60, alignment: .leading)
                                 

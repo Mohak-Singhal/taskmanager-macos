@@ -31,7 +31,7 @@ struct CommandPaletteView: View {
                     .font(.system(size: 13, weight: .medium))
                 Spacer()
                 Text("ESC to exit")
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(.system(size: 11, weight: .semibold))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(Color.gray.opacity(0.2))
@@ -65,16 +65,16 @@ struct CommandPaletteView: View {
                                 .foregroundColor(tc)
                             if !proc.tabName.isEmpty {
                                 Text("[\(proc.tabName)]")
-                                    .font(.system(size: 10))
+                                    .font(.system(size: 11))
                                     .foregroundColor(.gray)
                             }
                             Spacer()
                             Text("PID \(proc.pid)")
-                                .font(.system(size: 10))
+                                .font(.system(size: 11))
                                 .monospacedDigit()
                                 .foregroundColor(.gray)
                             Text(String(format: "%.1f%% CPU", proc.cpu))
-                                .font(.system(size: 10, weight: .semibold))
+                                .font(.system(size: 11, weight: .semibold))
                                 .foregroundColor(Color(hex: "0078D7"))
                         }
                         .padding(.horizontal, 10)

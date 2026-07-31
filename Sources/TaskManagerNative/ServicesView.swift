@@ -34,20 +34,21 @@ struct ServicesView: View {
             
             HStack(spacing: 12) {
                 HStack(spacing: 6) {
-                    Image(systemName: "magnifyingglass").font(.system(size: 10)).foregroundColor(.gray)
+                    Image(systemName: "magnifyingglass").font(.system(size: 11)).foregroundColor(.gray)
                     TextField("Search services", text: $searchText).textFieldStyle(.plain).font(.system(size: 11))
                     if !searchText.isEmpty {
                         Button(action: { searchText = "" }) {
-                            Image(systemName: "xmark.circle.fill").font(.system(size: 10)).foregroundColor(.gray)
+                            Image(systemName: "xmark.circle.fill").font(.system(size: 11)).foregroundColor(.gray)
                         }
                         .buttonStyle(.plain)
+                        .help("Clear search")
                     }
                 }
                 .padding(.horizontal, 8)
-                .frame(width: 220, height: 24)
+                .frame(width: 220, height: D.Control.height)
                 .background(cs == .dark ? Color(hex: "333333") : Color.white)
-                .cornerRadius(4)
-                .overlay(RoundedRectangle(cornerRadius: 4).stroke(Color.gray.opacity(0.3), lineWidth: 0.5))
+                .cornerRadius(D.Radius.control)
+                .overlay(RoundedRectangle(cornerRadius: D.Radius.control).stroke(Color.gray.opacity(0.3), lineWidth: 0.5))
 
                 Spacer()
 
@@ -70,7 +71,7 @@ struct ServicesView: View {
                     .padding(.vertical, 4)
                     .background(svc.pid == nil ? Color(hex: "107C41") : Color(hex: "C42B1C"))
                     .foregroundColor(.white)
-                    .cornerRadius(3)
+                    .cornerRadius(D.Radius.control)
                 }
             }
             .padding(.horizontal, 12)
@@ -113,7 +114,7 @@ struct ServicesView: View {
                         
                         HStack {
                             Text(svc.state)
-                                .font(.system(size: 10, weight: .semibold))
+                                .font(.system(size: 11, weight: .semibold))
                                 .foregroundColor(svc.pid != nil ? Color(hex: "107C41") : .gray)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 2)
@@ -170,7 +171,7 @@ struct ServicesView: View {
             HStack(spacing: 2) {
                 Text(label).font(.system(size: 11, weight: .semibold))
                 if sortCol == col {
-                    Image(systemName: sortAsc ? "chevron.up" : "chevron.down").font(.system(size: 8))
+                    Image(systemName: sortAsc ? "chevron.up" : "chevron.down").font(.system(size: 11))
                 }
             }
         }

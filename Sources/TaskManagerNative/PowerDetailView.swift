@@ -19,7 +19,7 @@ struct PowerDetailView: View {
                     .foregroundColor(tc)
                 Spacer()
                 Text(ps.onAC ? "AC Power" : "Battery")
-                    .font(.system(size: 11))
+                    .font(.system(size: 12))
                     .foregroundColor(.gray)
                     .lineLimit(1)
             }
@@ -28,9 +28,9 @@ struct PowerDetailView: View {
             
             VStack(spacing: 0) {
                 HStack {
-                    Text("Energy Impact").font(.system(size: 9)).foregroundColor(.gray)
+                    Text("Energy Impact").font(.system(size: 12)).foregroundColor(.gray)
                     Spacer()
-                    Text(String(format: "%.0f", impMax)).font(.system(size: 9)).foregroundColor(.gray)
+                    Text(String(format: "%.0f", impMax)).font(.system(size: 12)).foregroundColor(.gray)
                 }
                 .padding(.bottom, 3)
 
@@ -56,7 +56,7 @@ struct PowerDetailView: View {
                 .chartYAxis {
                     AxisMarks(values: .stride(by: impMax / 4)) { _ in
                         AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(gridColor)
-                        AxisValueLabel().font(.system(size: 8)).foregroundStyle(.gray)
+                        AxisValueLabel().font(.system(size: 12)).foregroundStyle(.gray)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -65,9 +65,9 @@ struct PowerDetailView: View {
                 .border(Color.gray.opacity(0.2), width: 1)
 
                 HStack {
-                    Text("60 seconds").font(.system(size: 9)).foregroundColor(.gray)
+                    Text("60 seconds").font(.system(size: 12)).foregroundColor(.gray)
                     Spacer()
-                    Text("0").font(.system(size: 9)).foregroundColor(.gray)
+                    Text("0").font(.system(size: 12)).foregroundColor(.gray)
                 }
                 .padding(.top, 3)
             }
@@ -103,9 +103,11 @@ struct PowerDetailView: View {
                     Divider().frame(height: 1).padding(.vertical, 2)
                     infoRow("CPU Temp:", monitor.cpuTemperature > 0 ? String(format: "%.1f°C", monitor.cpuTemperature) : "N/A")
                     infoRow("GPU Temp:", monitor.gpuTemperature > 0 ? String(format: "%.1f°C", monitor.gpuTemperature) : "N/A")
-                    infoRow("Fan speed:", monitor.fanSpeed > 0 ? "\(Int(monitor.fanSpeed)) RPM" : "0 RPM (Passive)")
+                    if monitor.fanSpeed > 0 {
+                        infoRow("Fan speed:", "\(Int(monitor.fanSpeed)) RPM")
+                    }
                 }
-                .frame(width: 210, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(.horizontal, 16)
@@ -119,7 +121,7 @@ struct PowerDetailView: View {
 
     private func statPill(_ label: String, _ val: String, large: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text(label).font(.system(size: 10)).foregroundColor(.gray).lineLimit(1)
+            Text(label).font(.system(size: 12)).foregroundColor(.gray).lineLimit(1)
             Text(val)
                 .font(.system(size: large ? 26 : 18, weight: .light))
                 .foregroundColor(tc).lineLimit(1).minimumScaleFactor(0.6)
@@ -128,9 +130,9 @@ struct PowerDetailView: View {
 
     private func infoRow(_ label: String, _ value: String) -> some View {
         HStack(spacing: 4) {
-            Text(label).font(.system(size: 10)).foregroundColor(.gray)
+            Text(label).font(.system(size: 12)).foregroundColor(.gray)
                 .lineLimit(1).minimumScaleFactor(0.75).frame(minWidth: 100, alignment: .leading)
-            Text(value).font(.system(size: 10)).foregroundColor(tc)
+            Text(value).font(.system(size: 12)).foregroundColor(tc)
                 .lineLimit(1).minimumScaleFactor(0.75)
             Spacer(minLength: 0)
         }

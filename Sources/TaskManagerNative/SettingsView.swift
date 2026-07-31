@@ -92,7 +92,7 @@ struct SettingsView: View {
                         Toggle(isOn: $monitor.alwaysOnTop) {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Always on top").font(.system(size: 12, weight: .medium))
-                                Text("Keep the Task Manager window floating above all other apps").font(.system(size: 10)).foregroundColor(.gray)
+                                Text("Keep the Task Manager window floating above all other apps").font(.system(size: 11)).foregroundColor(.gray)
                             }
                         }
                         .toggleStyle(.checkbox)
@@ -109,7 +109,7 @@ struct SettingsView: View {
                     }
                 }
             }
-            .padding(16)
+            .padding(D.Padding.screen)
         }
         .background(bg)
         .onChange(of: monitor.alwaysOnTop) { _, newVal in
@@ -127,9 +127,9 @@ struct SettingsView: View {
             VStack(alignment: .leading) {
                 content()
             }
-            .padding(12)
+            .padding(D.Padding.card)
             .background(cardBg)
-            .cornerRadius(6)
+            .cornerRadius(D.Radius.card)
             .overlay(
                 RoundedRectangle(cornerRadius: 6)
                     .stroke(Color.gray.opacity(0.15), lineWidth: 0.8)

@@ -1,5 +1,6 @@
 import Foundation
 import IOKit
+import IOKit.hid
 
 final class SMC: Sendable {
     static let shared = SMC()
@@ -173,23 +174,96 @@ final class SMC: Sendable {
     }
 
     func getCPUTemperature() -> Double? {
-        let candidates = ["Tp09", "Tp0d", "Tp0T", "TC0D", "TC0P", "TC0H"]
+        let candidates = [
+            // Intel
+            "Tp09", "Tp0d", "Tp0T", "TC0D", "TC0E", "TC0F", "TC0P", "TC0H",
+            // Apple Silicon (M1/M2/M3/M4/M5 series)
+            "Tp01", "Tp05", "Tp0D", "Tp0H", "Tp0L", "Tp0P", "Tp0X", "Tp0b",
+            "Tp1h", "Tp1t", "Tp1p", "Tp1l", "Tp0f", "Tp0j",
+            "Te05", "Te09", "Te0H", "Te0L", "Te0P", "Te0S",
+            "Tf04", "Tf09", "Tf0A", "Tf0B", "Tf0D", "Tf0E", "Tf44", "Tf49", "Tf4A", "Tf4B", "Tf4D", "Tf4E",
+            "Tp00", "Tp04", "Tp08", "Tp0C", "Tp0G", "Tp0K", "Tp0O", "Tp0R", "Tp0U", "Tp0V", "Tp0Y",
+            "Tp0a", "Tp0d", "Tp0g", "Tp0m", "Tp0p", "Tp0u", "Tp0y", "Tp0e",
+        ]
         for key in candidates {
-            if let temp = getTemperature(key), temp > 20, temp < 125 {
+            if let temp = getTemperature(key), temp > 20, temp < 110 {
                 return temp
             }
         }
-        return nil
+        return appleSiliconCPUFromHID()
     }
 
     func getGPUTemperature() -> Double? {
-        let candidates = ["Tg05", "Tg0D", "TG0D", "TG0P"]
+        let candidates = ["TGDD", "TCGC", "Tg05", "Tg0D", "TG0D", "TG0P"]
         for key in candidates {
-            if let temp = getTemperature(key), temp > 20, temp < 125 {
+            if let temp = getTemperature(key), temp > 20, temp < 110 {
                 return temp
             }
         }
-        return nil
+        return appleSiliconGPUFromHID()
+    }
+
+    // On Apple Silicon the SMC does not expose temperature keys publicly; the
+    // sensors are only readable through the HID temperature device (AppleVendor
+    // page 0xff00, usage 0x0005). The same approach used by Stats / iStat.
+    private func readHIDTemperatures() -> [String: Double] {
+        var sensors: [String: Double] = [:]
+
+        let matching = IOServiceMatching(kIOHIDDeviceKey) as NSMutableDictionary
+        matching[kIOHIDPrimaryUsagePageKey] = 0xff00
+        matching[kIOHIDPrimaryUsageKey] = 0x0005
+
+        var iterator: io_iterator_t = 0
+        guard IOServiceGetMatchingServices(kIOMainPortDefault, matching, &iterator) == KERN_SUCCESS else { return [:] }
+        defer { IOObjectRelease(iterator) }
+
+        var service = IOIteratorNext(iterator)
+        while service != 0 {
+            defer { IOObjectRelease(service) }
+            if let device = IOHIDDeviceCreate(kCFAllocatorDefault, service) {
+                if IOHIDDeviceOpen(device, 0) == kIOReturnSuccess {
+                    defer { IOHIDDeviceClose(device, 0) }
+                    let elementMatching: [String: Int] = [
+                        kIOHIDElementUsagePageKey: 0xff00,
+                        kIOHIDElementUsageKey: 0x0005,
+                    ]
+                    if let elements = IOHIDDeviceCopyMatchingElements(device, elementMatching as CFDictionary, 0) {
+                        let array = elements as NSArray
+                        for case let element as IOHIDElement in array {
+                            guard let name = IOHIDElementGetName(element) as String?, !name.isEmpty else { continue }
+                            var valueRef: Unmanaged<IOHIDValue> = unsafeBitCast(element, to: Unmanaged<IOHIDValue>.self)
+                            guard IOHIDDeviceGetValue(device, element, &valueRef) == kIOReturnSuccess else { continue }
+                            let value = valueRef.takeUnretainedValue()
+                            let raw = IOHIDValueGetIntegerValue(value)
+                            // HID temperature values are reported in 0.1 °C steps
+                            let temp = raw > 200 ? Double(raw) / 10.0 : Double(raw)
+                            if temp > 0, temp < 125 {
+                                sensors[name] = temp
+                            }
+                        }
+                    }
+                }
+            }
+            service = IOIteratorNext(iterator)
+        }
+
+        return sensors
+    }
+
+    private func appleSiliconCPUFromHID() -> Double? {
+        let temps = readHIDTemperatures().filter { key, _ in
+            key.hasPrefix("pACC MTR Temp") || key.hasPrefix("eACC MTR Temp") || key.hasPrefix("CPU MTR Temp")
+        }.map { $0.value }
+        guard !temps.isEmpty else { return nil }
+        return temps.reduce(0, +) / Double(temps.count)
+    }
+
+    private func appleSiliconGPUFromHID() -> Double? {
+        let temps = readHIDTemperatures().filter { key, _ in
+            key.hasPrefix("GPU MTR Temp")
+        }.map { $0.value }
+        guard !temps.isEmpty else { return nil }
+        return temps.reduce(0, +) / Double(temps.count)
     }
 
     func getFanRPM() -> Double? {

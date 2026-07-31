@@ -3,3 +3,4 @@
 *.xcuserdata
 *.xcodeproj/xcuserdata/
 Package.resolved
+build.log

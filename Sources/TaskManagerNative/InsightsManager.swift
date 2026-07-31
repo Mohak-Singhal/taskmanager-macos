@@ -474,8 +474,6 @@ class InsightsManager: ObservableObject {
         let targetDirs = [
             (home.appendingPathComponent("Library/Caches"), "System & App Cache"),
             (home.appendingPathComponent("Library/Application Support"), "Application Data"),
-            (home.appendingPathComponent("Downloads"), "Downloads Folder"),
-            (home.appendingPathComponent("Documents"), "Documents Folder"),
             (URL(fileURLWithPath: "/tmp"), "Temporary Items")
         ]
         

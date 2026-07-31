@@ -89,11 +89,12 @@ struct UsersView: View {
                             }
                         }) {
                             Image(systemName: expandedUsers.contains(grp.username) ? "chevron.down" : "chevron.right")
-                                .font(.system(size: 9, weight: .bold))
+                                .font(.system(size: 11, weight: .bold))
                                 .foregroundColor(.gray)
                                 .frame(width: 16)
                         }
                         .buttonStyle(.plain)
+                        .help(expandedUsers.contains(grp.username) ? "Collapse" : "Expand")
                         
                         HStack(spacing: 6) {
                             Image(systemName: "person.circle.fill").foregroundColor(accent).font(.system(size: 12))
@@ -160,7 +161,7 @@ struct UsersView: View {
                                     AppIconView(processName: proc.name)
                                         .frame(width: 14, height: 14)
                                     Text(proc.name).font(.system(size: 11))
-                                    Text("(\(proc.pid))").font(.system(size: 9)).foregroundColor(.gray).monospacedDigit()
+                                    Text("(\(proc.pid))").font(.system(size: 11)).foregroundColor(.gray).monospacedDigit()
                                 }
                                 .frame(minWidth: 196, alignment: .leading)
                                 

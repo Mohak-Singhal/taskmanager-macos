@@ -28,19 +28,19 @@ struct NetworkDetailView: View {
                         .foregroundColor(tc)
                     Spacer()
                     Button(showBits ? "Show in MB/s" : "Show in Mbps") { showBits.toggle() }
-                        .font(.system(size: 11)).buttonStyle(.plain).foregroundColor(.blue)
+                        .font(.system(size: 12)).buttonStyle(.plain).foregroundColor(.blue)
                 }
                 .padding(.bottom, 8)
 
                 
                 VStack(spacing: 0) {
                     HStack {
-                        Text("Throughput").font(.system(size: 9)).foregroundColor(.gray)
+                        Text("Throughput").font(.system(size: 12)).foregroundColor(.gray)
                         Spacer()
                         Text(showBits
                              ? String(format: "%.1f Mbps", chartMax)
                              : String(format: "%.1f MB/s", chartMax))
-                            .font(.system(size: 9)).foregroundColor(.gray)
+                            .font(.system(size: 12)).foregroundColor(.gray)
                     }
                     .padding(.bottom, 3)
 
@@ -86,7 +86,7 @@ struct NetworkDetailView: View {
                     .chartYAxis {
                         AxisMarks(values: .stride(by: chartMax / 4.0)) { _ in
                             AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(gridColor)
-                            AxisValueLabel().font(.system(size: 8)).foregroundStyle(.gray)
+                            AxisValueLabel().font(.system(size: 12)).foregroundStyle(.gray)
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -95,9 +95,9 @@ struct NetworkDetailView: View {
                     .border(Color.gray.opacity(0.2), width: 1)
 
                     HStack {
-                        Text("60 seconds").font(.system(size: 9)).foregroundColor(.gray)
+                        Text("60 seconds").font(.system(size: 12)).foregroundColor(.gray)
                         Spacer()
-                        Text("0").font(.system(size: 9)).foregroundColor(.gray)
+                        Text("0").font(.system(size: 12)).foregroundColor(.gray)
                     }
                     .padding(.top, 3)
                 }
@@ -125,7 +125,7 @@ struct NetworkDetailView: View {
                             infoRow("Signal strength:", "\(sig) dBm")
                         }
                     }
-                    .frame(width: 210, alignment: .leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
             } else {
@@ -153,7 +153,7 @@ struct NetworkDetailView: View {
                 } else {
                     Rectangle().fill(color).frame(width: 12, height: 2)
                 }
-                Text(label).font(.system(size: 10)).foregroundColor(.gray).lineLimit(1)
+                Text(label).font(.system(size: 12)).foregroundColor(.gray).lineLimit(1)
             }
             Text(val)
                 .font(.system(size: large ? 26 : 18, weight: .light))
@@ -163,9 +163,9 @@ struct NetworkDetailView: View {
 
     private func infoRow(_ label: String, _ value: String) -> some View {
         HStack(spacing: 4) {
-            Text(label).font(.system(size: 10)).foregroundColor(.gray)
+            Text(label).font(.system(size: 12)).foregroundColor(.gray)
                 .lineLimit(1).minimumScaleFactor(0.75).frame(minWidth: 100, alignment: .leading)
-            Text(value).font(.system(size: 10)).foregroundColor(tc)
+            Text(value).font(.system(size: 12)).foregroundColor(tc)
                 .lineLimit(1).minimumScaleFactor(0.75)
             Spacer(minLength: 0)
         }
