@@ -32,6 +32,14 @@ struct ProcessView: View {
     @State private var confirmKillName: String = ""
     @State private var selectedPropertiesProcess: MachProcess? = nil
 
+    @State private var nameWidth: CGFloat = 260
+    @State private var cpuWidth: CGFloat = 80
+    @State private var memoryWidth: CGFloat = 85
+    @State private var vmCompressedWidth: CGFloat = 90
+    @State private var realMemoryWidth: CGFloat = 85
+    @State private var diskWidth: CGFloat = 80
+    @State private var networkWidth: CGFloat = 80
+
     enum SortColumn { case name, cpu, memory, realMemory, vmCompressed, disk, network, pid }
 
     private var tc: Color { cs == .dark ? .white : .black }
@@ -48,6 +56,10 @@ struct ProcessView: View {
         let hardware = monitor.networkTotalRxRate + monitor.networkTotalTxRate
         let processes = monitor.processes.reduce(0.0) { $0 + $1.networkRxRate + $1.networkTxRate }
         return max(hardware, processes)
+    }
+
+    private var totalColumnsWidth: CGFloat {
+        nameWidth + cpuWidth + memoryWidth + vmCompressedWidth + realMemoryWidth + diskWidth + networkWidth + 48
     }
 
     private var groupedNodes: [ProcessNode] {
@@ -101,9 +113,16 @@ struct ProcessView: View {
                 let totalNetwork = (proc.networkRxRate + proc.networkTxRate) + children.reduce(0) { $0 + ($1.networkRxRate + $1.networkTxRate) }
                 
                 let category: ProcessCategory
+                let nameLower = proc.name.lowercased()
+                let parentLower = proc.parentAppName.lowercased()
+                let isUserApp = nameLower == "opencode" || parentLower == "opencode" ||
+                                nameLower == "code" || parentLower == "code" ||
+                                nameLower == "cursor" || parentLower == "cursor" ||
+                                nameLower == "xcode" || parentLower == "xcode"
+                
                 if monitor.systemPIDs.contains(proc.pid) {
                     category = .system
-                } else if monitor.appPIDs.contains(proc.pid) {
+                } else if monitor.appPIDs.contains(proc.pid) || isUserApp {
                     category = .app
                 } else {
                     category = .background
@@ -150,101 +169,112 @@ struct ProcessView: View {
     private var sysNodes: [ProcessNode] { groupedNodes.filter { $0.category == .system } }
 
     var body: some View {
-        VStack(spacing: 0) {
-            
-            HStack(spacing: 0) {
-                Button(action: { toggleSort(.name) }) {
-                    HStack(spacing: 2) {
-                        Text("Name").font(.system(size: 11, weight: .semibold))
-                        if sortColumn == .name {
-                            Image(systemName: sortAsc ? "chevron.up" : "chevron.down").font(.system(size: 8))
-                        }
-                    }
-                }
-                .buttonStyle(.plain)
-                .foregroundColor(tc)
-                .frame(minWidth: 240, maxWidth: .infinity, alignment: .leading)
-                .padding(.leading, 24)
+        ScrollView(.horizontal, showsIndicators: true) {
+            VStack(spacing: 0) {
                 
-                
-                let cpuPct = monitor.cpuUsage.total
-                HeaderCell(title: "CPU", val: String(format: "%d%%", Int(cpuPct)), ratio: cpuPct / 100.0, tc: tc, accent: accent, cs: cs)
-                    .frame(width: 80)
-                    .onTapGesture { toggleSort(.cpu) }
-                
-                
-                let memUsed = Double(monitor.memory.used)
-                let memTotal = Double(max(monitor.memory.total, 1))
-                HeaderCell(title: "Memory", val: String(format: "%d%%", Int(memUsed / memTotal * 100.0)), ratio: memUsed / memTotal, tc: tc, accent: accent, cs: cs)
-                    .frame(width: 85)
-                    .onTapGesture { toggleSort(.memory) }
-                
-                let compUsed = Double(monitor.memory.compressed)
-                HeaderCell(title: "VM Compressed", val: formatWinMem(monitor.memory.compressed), ratio: compUsed / memTotal, tc: tc, accent: accent, cs: cs)
-                    .frame(width: 90)
-                    .onTapGesture { toggleSort(.vmCompressed) }
-                
-                let realUsed = Double(monitor.memory.used >= monitor.memory.compressed ? monitor.memory.used - monitor.memory.compressed : monitor.memory.used)
-                HeaderCell(title: "Real Mem", val: formatWinMem(UInt64(realUsed)), ratio: realUsed / memTotal, tc: tc, accent: accent, cs: cs)
-                    .frame(width: 85)
-                    .onTapGesture { toggleSort(.realMemory) }
-                
-                
-                HeaderCell(title: "Disk", val: bytesPerSec(totalDiskRate), ratio: min(totalDiskRate / (20 * 1024 * 1024), 1.0), tc: tc, accent: accent, cs: cs)
-                    .frame(width: 80)
-                    .onTapGesture { toggleSort(.disk) }
-                
-                
-                HeaderCell(title: "Network", val: bitsPerSec(totalNetRate), ratio: min(totalNetRate / (5 * 1024 * 1024), 1.0), tc: tc, accent: accent, cs: cs)
-                    .frame(width: 80)
-                    .onTapGesture { toggleSort(.network) }
-            }
-            .frame(height: 36)
-            .background(cs == .dark ? Color(hex: "232323") : Color(hex: "EDEDED"))
-
-            Divider()
-
-            ScrollView(.vertical) {
-                LazyVStack(spacing: 0) {
-                    if monitor.processes.isEmpty {
-                        VStack(spacing: 12) {
-                            ProgressView().controlSize(.small)
-                            Text("Collecting process data...")
-                                .font(.system(size: 11))
-                                .foregroundColor(.gray)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 40)
-                    } else {
-                        
-                        SectionHeaderView(title: "Apps (\(appNodes.count))", icon: "window", isExpanded: $expandApps, cs: cs)
-                        
-                        if expandApps {
-                            ForEach(appNodes) { node in
-                                renderNodeRow(node)
-                            }
-                        }
-
-                        
-                        SectionHeaderView(title: "Background processes (\(bgNodes.count))", icon: "gearshape.2", isExpanded: $expandBackground, cs: cs)
-                        
-                        if expandBackground {
-                            ForEach(bgNodes) { node in
-                                renderNodeRow(node)
-                            }
-                        }
-
-                        
-                        SectionHeaderView(title: "Windows processes (\(sysNodes.count))", icon: "shield", isExpanded: $expandWindows, cs: cs)
-                        
-                        if expandWindows {
-                            ForEach(sysNodes) { node in
-                                renderNodeRow(node)
+                HStack(spacing: 0) {
+                    Button(action: { toggleSort(.name) }) {
+                        HStack(spacing: 2) {
+                            Text("Name").font(.system(size: 11, weight: .semibold))
+                            if sortColumn == .name {
+                                Image(systemName: sortAsc ? "chevron.up" : "chevron.down").font(.system(size: 8))
                             }
                         }
                     }
+                    .buttonStyle(.plain)
+                    .foregroundColor(tc)
+                    .frame(width: nameWidth, alignment: .leading)
+                    .padding(.leading, 24)
+                    
+                    ResizableDivider(width: $nameWidth, minWidth: 150)
+                    
+                    let cpuPct = monitor.cpuUsage.total
+                    HeaderCell(title: "CPU", val: String(format: "%d%%", Int(cpuPct)), ratio: cpuPct / 100.0, tc: tc, accent: accent, cs: cs)
+                        .frame(width: cpuWidth)
+                        .onTapGesture { toggleSort(.cpu) }
+                    
+                    ResizableDivider(width: $cpuWidth, minWidth: 50)
+                    
+                    let memUsed = Double(monitor.memory.used)
+                    let memTotal = Double(max(monitor.memory.total, 1))
+                    HeaderCell(title: "Memory", val: String(format: "%d%%", Int(memUsed / memTotal * 100.0)), ratio: memUsed / memTotal, tc: tc, accent: accent, cs: cs)
+                        .frame(width: memoryWidth)
+                        .onTapGesture { toggleSort(.memory) }
+                    
+                    ResizableDivider(width: $memoryWidth, minWidth: 50)
+                    
+                    let compUsed = Double(monitor.memory.compressed)
+                    HeaderCell(title: "VM Compressed", val: formatWinMem(monitor.memory.compressed), ratio: compUsed / memTotal, tc: tc, accent: accent, cs: cs)
+                        .frame(width: vmCompressedWidth)
+                        .onTapGesture { toggleSort(.vmCompressed) }
+                    
+                    ResizableDivider(width: $vmCompressedWidth, minWidth: 50)
+                    
+                    let realUsed = Double(monitor.memory.used >= monitor.memory.compressed ? monitor.memory.used - monitor.memory.compressed : monitor.memory.used)
+                    HeaderCell(title: "Real Mem", val: formatWinMem(UInt64(realUsed)), ratio: realUsed / memTotal, tc: tc, accent: accent, cs: cs)
+                        .frame(width: realMemoryWidth)
+                        .onTapGesture { toggleSort(.realMemory) }
+                    
+                    ResizableDivider(width: $realMemoryWidth, minWidth: 50)
+                    
+                    HeaderCell(title: "Disk", val: bytesPerSec(totalDiskRate), ratio: min(totalDiskRate / (20 * 1024 * 1024), 1.0), tc: tc, accent: accent, cs: cs)
+                        .frame(width: diskWidth)
+                        .onTapGesture { toggleSort(.disk) }
+                    
+                    ResizableDivider(width: $diskWidth, minWidth: 50)
+                    
+                    HeaderCell(title: "Network", val: bitsPerSec(totalNetRate), ratio: min(totalNetRate / (5 * 1024 * 1024), 1.0), tc: tc, accent: accent, cs: cs)
+                        .frame(width: networkWidth)
+                        .onTapGesture { toggleSort(.network) }
+                }
+                .frame(height: 36)
+                .background(cs == .dark ? Color(hex: "232323") : Color(hex: "EDEDED"))
+
+                Divider()
+
+                ScrollView(.vertical) {
+                    LazyVStack(spacing: 0) {
+                        if monitor.processes.isEmpty {
+                            VStack(spacing: 12) {
+                                ProgressView().controlSize(.small)
+                                Text("Collecting process data...")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.gray)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 40)
+                        } else {
+                            
+                            SectionHeaderView(title: "Apps (\(appNodes.count))", icon: "window", isExpanded: $expandApps, cs: cs)
+                            
+                            if expandApps {
+                                ForEach(appNodes) { node in
+                                    renderNodeRow(node)
+                                }
+                            }
+
+                            
+                            SectionHeaderView(title: "Background processes (\(bgNodes.count))", icon: "gearshape.2", isExpanded: $expandBackground, cs: cs)
+                            
+                            if expandBackground {
+                                ForEach(bgNodes) { node in
+                                    renderNodeRow(node)
+                                }
+                            }
+
+                            
+                            SectionHeaderView(title: "Windows processes (\(sysNodes.count))", icon: "shield", isExpanded: $expandWindows, cs: cs)
+                            
+                            if expandWindows {
+                                ForEach(sysNodes) { node in
+                                    renderNodeRow(node)
+                                }
+                            }
+                        }
+                    }
                 }
             }
+            .frame(width: totalColumnsWidth)
         }
         .background(cs == .dark ? Color(hex: "2B2B2B") : Color.white)
         .onChange(of: monitor.processes) { _, newList in
@@ -318,7 +348,14 @@ struct ProcessView: View {
             },
             totalMemorySystem: monitor.memory.total,
             accent: accent,
-            cs: cs
+            cs: cs,
+            nameWidth: nameWidth,
+            cpuWidth: cpuWidth,
+            memoryWidth: memoryWidth,
+            vmCompressedWidth: vmCompressedWidth,
+            realMemoryWidth: realMemoryWidth,
+            diskWidth: diskWidth,
+            networkWidth: networkWidth
         )
         .contentShape(Rectangle())
         .onTapGesture {
@@ -355,7 +392,14 @@ struct ProcessView: View {
                     onToggleExpand: {},
                     totalMemorySystem: monitor.memory.total,
                     accent: accent,
-                    cs: cs
+                    cs: cs,
+                    nameWidth: nameWidth,
+                    cpuWidth: cpuWidth,
+                    memoryWidth: memoryWidth,
+                    vmCompressedWidth: vmCompressedWidth,
+                    realMemoryWidth: realMemoryWidth,
+                    diskWidth: diskWidth,
+                    networkWidth: networkWidth
                 )
                 .contentShape(Rectangle())
                 .onTapGesture {
@@ -572,6 +616,13 @@ struct ProcessRowItem: View {
     var totalMemorySystem: UInt64
     var accent: Color
     var cs: ColorScheme
+    var nameWidth: CGFloat
+    var cpuWidth: CGFloat
+    var memoryWidth: CGFloat
+    var vmCompressedWidth: CGFloat
+    var realMemoryWidth: CGFloat
+    var diskWidth: CGFloat
+    var networkWidth: CGFloat
     @State private var isHovered = false
 
     var body: some View {
@@ -635,57 +686,65 @@ struct ProcessRowItem: View {
                     }
                 }
             }
-            .frame(minWidth: 240, maxWidth: .infinity, alignment: .leading)
+            .frame(width: nameWidth, alignment: .leading)
 
+            Spacer().frame(width: 4)
             
             Text(String(format: "%.1f%%", cpu))
                 .font(.system(size: 11, weight: cpu > 10.0 ? .semibold : .regular))
                 .monospacedDigit()
                 .foregroundColor(cpuText(cpu))
-                .frame(width: 80, alignment: .trailing)
+                .frame(width: cpuWidth, alignment: .trailing)
                 .padding(.trailing, 6)
                 .frame(maxHeight: .infinity)
                 .background(heatmapBg(val: cpu, maxVal: 100.0))
 
+            Spacer().frame(width: 4)
             
             Text(formatWinMem(memory))
                 .font(.system(size: 11))
                 .monospacedDigit()
-                .frame(width: 85, alignment: .trailing)
+                .frame(width: memoryWidth, alignment: .trailing)
                 .padding(.trailing, 6)
                 .frame(maxHeight: .infinity)
                 .background(heatmapBg(val: Double(memory), maxVal: Double(totalMemorySystem) * 0.15))
 
+            Spacer().frame(width: 4)
+
             Text(formatWinMem(vmCompressed))
                 .font(.system(size: 11))
                 .monospacedDigit()
-                .frame(width: 90, alignment: .trailing)
+                .frame(width: vmCompressedWidth, alignment: .trailing)
                 .padding(.trailing, 6)
                 .frame(maxHeight: .infinity)
                 .background(heatmapBg(val: Double(vmCompressed), maxVal: Double(totalMemorySystem) * 0.10))
 
+            Spacer().frame(width: 4)
+
             Text(formatWinMem(realMemory))
                 .font(.system(size: 11))
                 .monospacedDigit()
-                .frame(width: 85, alignment: .trailing)
+                .frame(width: realMemoryWidth, alignment: .trailing)
                 .padding(.trailing, 6)
                 .frame(maxHeight: .infinity)
                 .background(heatmapBg(val: Double(realMemory), maxVal: Double(totalMemorySystem) * 0.12))
-
+            
+            Spacer().frame(width: 4)
             
             Text(bytesPerSec(disk))
                 .font(.system(size: 11))
                 .monospacedDigit()
-                .frame(width: 80, alignment: .trailing)
+                .frame(width: diskWidth, alignment: .trailing)
                 .padding(.trailing, 6)
                 .frame(maxHeight: .infinity)
                 .background(heatmapBg(val: disk, maxVal: 10.0 * 1024 * 1024))
 
+            Spacer().frame(width: 4)
             
             Text(bitsPerSec(network))
                 .font(.system(size: 11))
                 .monospacedDigit()
-                .frame(width: 80, alignment: .trailing)
+                .frame(width: networkWidth, alignment: .trailing)
                 .padding(.trailing, 6)
                 .frame(maxHeight: .infinity)
                 .background(heatmapBg(val: network, maxVal: 2.0 * 1024 * 1024))
@@ -872,5 +931,39 @@ struct ProcessPropertiesView: View {
                 .lineLimit(2)
             Spacer()
         }
+    }
+}
+
+struct ResizableDivider: View {
+    @Binding var width: CGFloat
+    var minWidth: CGFloat = 40
+    @State private var startWidth: CGFloat = 0
+    @State private var isHovered = false
+
+    var body: some View {
+        Rectangle()
+            .fill(isHovered ? Color.blue.opacity(0.8) : Color.gray.opacity(0.15))
+            .frame(width: 4)
+            .contentShape(Rectangle())
+            .onHover { inside in
+                isHovered = inside
+                if inside {
+                    NSCursor.resizeLeftRight.push()
+                } else {
+                    NSCursor.pop()
+                }
+            }
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        if startWidth == 0 {
+                            startWidth = width
+                        }
+                        width = max(minWidth, startWidth + value.translation.width)
+                    }
+                    .onEnded { _ in
+                        startWidth = 0
+                    }
+            )
     }
 }
