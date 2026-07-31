@@ -4,6 +4,9 @@ import Metal
 struct SettingsView: View {
     @EnvironmentObject var monitor: SystemMonitor
     @Environment(\.colorScheme) var cs
+    @AppStorage("showMenuBarIcon") private var showMenuBarIcon = true
+    @AppStorage("showMenuBarCPU") private var showMenuBarCPU = true
+    @AppStorage("showMenuBarRAM") private var showMenuBarRAM = true
     
     private var tc: Color { cs == .dark ? .white : .black }
     private var bg: Color { cs == .dark ? Color(hex: "1E1E1E") : Color(hex: "F4F4F4") }
@@ -88,7 +91,7 @@ struct SettingsView: View {
                 }
                 
                 settingsCard(title: "General Options") {
-                    VStack(alignment: .leading, spacing: 10) {
+                    VStack(alignment: .leading, spacing: 14) {
                         Toggle(isOn: $monitor.alwaysOnTop) {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Always on top").font(.system(size: 12, weight: .medium))
@@ -96,6 +99,36 @@ struct SettingsView: View {
                             }
                         }
                         .toggleStyle(.checkbox)
+                        
+                        Divider().opacity(0.15)
+                        
+                        Toggle(isOn: $showMenuBarIcon) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Show Menu Bar Icon").font(.system(size: 12, weight: .medium))
+                                Text("Display status monitor in the macOS global menu bar").font(.system(size: 11)).foregroundColor(.gray)
+                            }
+                        }
+                        .toggleStyle(.checkbox)
+                        
+                        if showMenuBarIcon {
+                            Toggle(isOn: $showMenuBarCPU) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Show CPU in Menu Bar").font(.system(size: 12, weight: .medium))
+                                    Text("Display live CPU utilization percentage").font(.system(size: 11)).foregroundColor(.gray)
+                                }
+                            }
+                            .toggleStyle(.checkbox)
+                            .padding(.leading, 20)
+                            
+                            Toggle(isOn: $showMenuBarRAM) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Show RAM in Menu Bar").font(.system(size: 12, weight: .medium))
+                                    Text("Display live Memory usage percentage").font(.system(size: 11)).foregroundColor(.gray)
+                                }
+                            }
+                            .toggleStyle(.checkbox)
+                            .padding(.leading, 20)
+                        }
                     }
                 }
                 

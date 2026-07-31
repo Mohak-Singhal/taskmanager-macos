@@ -72,14 +72,14 @@ struct ProcessView: View {
     }
 
     private var totalColumnsWidth: CGFloat {
-        var w = nameWidth + 56
-        if showColumnCPU { w += cpuWidth }
-        if showColumnUserCPU { w += userCPUWidth }
-        if showColumnSystemCPU { w += systemCPUWidth }
-        if showColumnMemory { w += memoryWidth }
-        if showColumnVMCompressed { w += vmCompressedWidth }
-        if showColumnRealMemory { w += realMemoryWidth }
-        if showColumnDisk { w += diskWidth }
+        var w = nameWidth + 4
+        if showColumnCPU { w += cpuWidth + 4 }
+        if showColumnUserCPU { w += userCPUWidth + 4 }
+        if showColumnSystemCPU { w += systemCPUWidth + 4 }
+        if showColumnMemory { w += memoryWidth + 4 }
+        if showColumnVMCompressed { w += vmCompressedWidth + 4 }
+        if showColumnRealMemory { w += realMemoryWidth + 4 }
+        if showColumnDisk { w += diskWidth + 4 }
         if showColumnNetwork { w += networkWidth }
         return w
     }
@@ -204,36 +204,38 @@ struct ProcessView: View {
                 VStack(spacing: 0) {
                     
                     HStack(spacing: 0) {
-                        Menu {
-                            Toggle("CPU", isOn: $showColumnCPU)
-                            Toggle("User CPU", isOn: $showColumnUserCPU)
-                            Toggle("System CPU", isOn: $showColumnSystemCPU)
-                            Toggle("Memory", isOn: $showColumnMemory)
-                            Toggle("VM Compressed", isOn: $showColumnVMCompressed)
-                            Toggle("Real Memory", isOn: $showColumnRealMemory)
-                            Toggle("Disk", isOn: $showColumnDisk)
-                            Toggle("Network", isOn: $showColumnNetwork)
-                        } label: {
-                            Image(systemName: "slider.horizontal.3")
-                                .font(.system(size: 12))
-                                .foregroundColor(.gray)
-                        }
-                        .menuStyle(.borderlessButton)
-                        .frame(width: 20)
-                        .padding(.leading, 8)
-                        
-                        Button(action: { toggleSort(.name) }) {
-                            HStack(spacing: 2) {
-                                Text("Name").font(.system(size: 11, weight: .semibold))
-                                if sortColumn == .name {
-                                    Image(systemName: sortAsc ? "chevron.up" : "chevron.down").font(.system(size: 11))
+                        HStack(spacing: 0) {
+                            Menu {
+                                Toggle("CPU", isOn: $showColumnCPU)
+                                Toggle("User CPU", isOn: $showColumnUserCPU)
+                                Toggle("System CPU", isOn: $showColumnSystemCPU)
+                                Toggle("Memory", isOn: $showColumnMemory)
+                                Toggle("VM Compressed", isOn: $showColumnVMCompressed)
+                                Toggle("Real Memory", isOn: $showColumnRealMemory)
+                                Toggle("Disk", isOn: $showColumnDisk)
+                                Toggle("Network", isOn: $showColumnNetwork)
+                            } label: {
+                                Image(systemName: "slider.horizontal.3")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.gray)
+                            }
+                            .menuStyle(.borderlessButton)
+                            .frame(width: 20)
+                            .padding(.leading, 8)
+                            
+                            Button(action: { toggleSort(.name) }) {
+                                HStack(spacing: 2) {
+                                    Text("Name").font(.system(size: 11, weight: .semibold))
+                                    if sortColumn == .name {
+                                        Image(systemName: sortAsc ? "chevron.up" : "chevron.down").font(.system(size: 11))
+                                    }
                                 }
                             }
+                            .buttonStyle(.plain)
+                            .foregroundColor(tc)
+                            .padding(.leading, 28)
                         }
-                        .buttonStyle(.plain)
-                        .foregroundColor(tc)
-                        .padding(.leading, 28)
-                        .frame(minWidth: nameWidth, maxWidth: .infinity, alignment: .leading)
+                        .frame(width: nameWidth, alignment: .leading)
                         
                         ResizableDivider(width: $nameWidth, minWidth: 150)
                         
@@ -805,7 +807,7 @@ struct ProcessRowItem: View {
                      }
                 }
             }
-            .frame(minWidth: nameWidth, maxWidth: .infinity, alignment: .leading)
+            .frame(width: nameWidth, alignment: .leading)
 
             if showColumnCPU {
                 Spacer().frame(width: 4)
@@ -813,8 +815,8 @@ struct ProcessRowItem: View {
                     .font(.system(size: 12, weight: cpu > 10.0 ? .semibold : .regular))
                     .monospacedDigit()
                     .foregroundColor(cpuText(cpu))
-                    .frame(width: cpuWidth, alignment: .trailing)
                     .padding(.trailing, 8)
+                    .frame(width: cpuWidth, alignment: .trailing)
                     .frame(maxHeight: .infinity)
                     .background(heatmapBg(val: cpu, maxVal: 100.0))
             }
@@ -825,8 +827,8 @@ struct ProcessRowItem: View {
                     .font(.system(size: 12))
                     .monospacedDigit()
                     .foregroundColor(cpuText(userCPU))
-                    .frame(width: userCPUWidth, alignment: .trailing)
                     .padding(.trailing, 8)
+                    .frame(width: userCPUWidth, alignment: .trailing)
                     .frame(maxHeight: .infinity)
                     .background(heatmapBg(val: userCPU, maxVal: 100.0))
             }
@@ -837,8 +839,8 @@ struct ProcessRowItem: View {
                     .font(.system(size: 12))
                     .monospacedDigit()
                     .foregroundColor(cpuText(systemCPU))
-                    .frame(width: systemCPUWidth, alignment: .trailing)
                     .padding(.trailing, 8)
+                    .frame(width: systemCPUWidth, alignment: .trailing)
                     .frame(maxHeight: .infinity)
                     .background(heatmapBg(val: systemCPU, maxVal: 100.0))
             }
@@ -848,8 +850,8 @@ struct ProcessRowItem: View {
                 Text(formatWinMem(memory))
                     .font(.system(size: 12))
                     .monospacedDigit()
-                    .frame(width: memoryWidth, alignment: .trailing)
                     .padding(.trailing, 8)
+                    .frame(width: memoryWidth, alignment: .trailing)
                     .frame(maxHeight: .infinity)
                     .background(heatmapBg(val: Double(memory), maxVal: Double(totalMemorySystem) * 0.15))
             }
@@ -859,8 +861,8 @@ struct ProcessRowItem: View {
                 Text(formatWinMem(vmCompressed))
                     .font(.system(size: 12))
                     .monospacedDigit()
-                    .frame(width: vmCompressedWidth, alignment: .trailing)
                     .padding(.trailing, 8)
+                    .frame(width: vmCompressedWidth, alignment: .trailing)
                     .frame(maxHeight: .infinity)
                     .background(heatmapBg(val: Double(vmCompressed), maxVal: Double(totalMemorySystem) * 0.10))
             }
@@ -870,8 +872,8 @@ struct ProcessRowItem: View {
                 Text(formatWinMem(realMemory))
                     .font(.system(size: 12))
                     .monospacedDigit()
-                    .frame(width: realMemoryWidth, alignment: .trailing)
                     .padding(.trailing, 8)
+                    .frame(width: realMemoryWidth, alignment: .trailing)
                     .frame(maxHeight: .infinity)
                     .background(heatmapBg(val: Double(realMemory), maxVal: Double(totalMemorySystem) * 0.12))
             }
@@ -881,8 +883,8 @@ struct ProcessRowItem: View {
                 Text(bytesPerSec(disk))
                     .font(.system(size: 12))
                     .monospacedDigit()
-                    .frame(width: diskWidth, alignment: .trailing)
                     .padding(.trailing, 8)
+                    .frame(width: diskWidth, alignment: .trailing)
                     .frame(maxHeight: .infinity)
                     .background(heatmapBg(val: disk, maxVal: 10.0 * 1024 * 1024))
             }
@@ -892,8 +894,8 @@ struct ProcessRowItem: View {
                 Text(bitsPerSec(network))
                     .font(.system(size: 12))
                     .monospacedDigit()
-                    .frame(width: networkWidth, alignment: .trailing)
                     .padding(.trailing, 8)
+                    .frame(width: networkWidth, alignment: .trailing)
                     .frame(maxHeight: .infinity)
                     .background(heatmapBg(val: network, maxVal: 2.0 * 1024 * 1024))
             }
