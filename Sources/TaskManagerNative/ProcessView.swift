@@ -60,16 +60,36 @@ struct ProcessView: View {
         
         var childrenMap: [pid_t: [MachProcess]] = [:]
         for proc in list {
-            if proc.ppid > 1 && pidMap[proc.ppid] != nil {
+            let isChild: Bool = {
+                guard proc.ppid > 1, let parent = pidMap[proc.ppid] else { return false }
+                let parentName = parent.name.lowercased()
+                if parentName == "zsh" || parentName == "bash" || parentName == "sh" || parentName == "fish" || parentName == "tmux" || parentName == "screen" {
+                    return false
+                }
+                return true
+            }()
+            
+            if isChild {
                 childrenMap[proc.ppid, default: []].append(proc)
             }
         }
         
         var topLevelNodes: [ProcessNode] = []
+        let searchActive = !searchText.isEmpty
+        
         for proc in filtered {
-            let isChild = proc.ppid > 1 && pidMap[proc.ppid] != nil
+            let isChild: Bool = {
+                if searchActive { return false }
+                guard proc.ppid > 1, let parent = pidMap[proc.ppid] else { return false }
+                let parentName = parent.name.lowercased()
+                if parentName == "zsh" || parentName == "bash" || parentName == "sh" || parentName == "fish" || parentName == "tmux" || parentName == "screen" {
+                    return false
+                }
+                return true
+            }()
+            
             if !isChild {
-                let children = childrenMap[proc.pid] ?? []
+                let children = searchActive ? [] : (childrenMap[proc.pid] ?? [])
                 
                 let totalCPU = proc.cpu + children.reduce(0) { $0 + $1.cpu }
                 let totalMemory = proc.memory + children.reduce(0) { $0 + $1.memory }
