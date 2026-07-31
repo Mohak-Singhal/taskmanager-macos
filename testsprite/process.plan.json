@@ -1,0 +1,27 @@
+{
+  "projectId": "taskmanager-native-test",
+  "type": "frontend",
+  "name": "Process Management Workflow",
+  "description": "Verifies the Processes tab: list population, grouping, search, sorting, selection, kill confirmation, guards, efficiency mode, and the Run-new-task dialog.",
+  "priority": "p1",
+  "planSteps": [
+    { "type": "action", "description": "Launch TaskManagerNative and open the Processes tab (default tab)" },
+    { "type": "assertion", "description": "Assert the process table renders Apps, Background processes, and Windows processes sections with live row counts" },
+    { "type": "action", "description": "Type a query into the global search field (e.g. 'Safari')" },
+    { "type": "assertion", "description": "Assert only matching process rows (name, tab name, or working directory) remain visible" },
+    { "type": "action", "description": "Click the CPU column header twice" },
+    { "type": "assertion", "description": "Assert rows sort descending by CPU% then ascending" },
+    { "type": "action", "description": "Select a row and click 'End task'" },
+    { "type": "assertion", "description": "Assert a confirmation alert appears with the exact process name" },
+    { "type": "action", "description": "Confirm the kill" },
+    { "type": "assertion", "description": "Assert the process disappears on the next refresh and the End-task button clears selection" },
+    { "type": "action", "description": "Attempt to end a critical/system process (e.g. WindowServer or PID 1)" },
+    { "type": "assertion", "description": "Assert the app refuses with a visible error and does not attempt the kill" },
+    { "type": "action", "description": "Toggle 'Efficiency mode'" },
+    { "type": "assertion", "description": "Assert all running app processes receive priority 10 (nice), and priority 0 when toggled off" },
+    { "type": "action", "description": "Open the 'Run new task' dialog from the top bar" },
+    { "type": "assertion", "description": "Assert typing a known app name opens it via LaunchServices; unknown input shows an error instead of executing arbitrary shell" },
+    { "type": "action", "description": "Right-click a row and choose 'End Process Tree'" },
+    { "type": "assertion", "description": "Assert SIGTERM then SIGKILL is sent to the real descendant subtree (walked by ppid), not an unrelated process group" }
+  ]
+}

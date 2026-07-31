@@ -1,0 +1,19 @@
+{
+  "projectId": "taskmanager-native-test",
+  "type": "frontend",
+  "name": "Startup Apps & Services Workflow",
+  "description": "Verifies the Startup Apps and Services tabs: listing, search, sort, toggle/start/stop actions, and failure feedback.",
+  "priority": "p2",
+  "planSteps": [
+    { "type": "action", "description": "Navigate to Startup apps" },
+    { "type": "assertion", "description": "Assert launch agents/daemons resolve from ~/Library/LaunchAgents, /Library/LaunchAgents, and /Library/LaunchDaemons" },
+    { "type": "action", "description": "Select a user-writable launch agent and click Disable" },
+    { "type": "assertion", "description": "Assert the plist Disabled flag flips and the row reflects it" },
+    { "type": "action", "description": "Select a system (root-owned) launch daemon and click Disable" },
+    { "type": "assertion", "description": "Assert a user-visible error alert explains the item is not writable" },
+    { "type": "action", "description": "Navigate to Services" },
+    { "type": "assertion", "description": "Assert the launchctl list table renders Name, PID, and Status columns (Group column removed)" },
+    { "type": "action", "description": "Click Stop on a system service" },
+    { "type": "assertion", "description": "Assert the operation result is surfaced to the user via the action-error alert when it fails" }
+  ]
+}

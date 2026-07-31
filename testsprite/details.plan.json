@@ -1,0 +1,21 @@
+{
+  "projectId": "taskmanager-native-test",
+  "type": "frontend",
+  "name": "Details & Column-Sort Integrity Workflow",
+  "description": "Verifies the Details tab filters and column sorting, and that each column header sorts by its own field.",
+  "priority": "p1",
+  "planSteps": [
+    { "type": "action", "description": "Navigate to Details" },
+    { "type": "assertion", "description": "Assert the table headers read Name / PID / Status / User name / CPU / Memory / Threads" },
+    { "type": "action", "description": "Click the 'CPU' header" },
+    { "type": "assertion", "description": "Assert the list sorts by CPU% descending" },
+    { "type": "action", "description": "Click the 'Memory' header" },
+    { "type": "assertion", "description": "Assert the list sorts by Memory descending" },
+    { "type": "action", "description": "Click the 'User name' header" },
+    { "type": "assertion", "description": "Assert the list sorts by username" },
+    { "type": "action", "description": "Click the 'Status' header" },
+    { "type": "assertion", "description": "Assert the list sorts by thread count (Running rows first)" },
+    { "type": "action", "description": "Type a PID into the filter field" },
+    { "type": "assertion", "description": "Assert only that PID row remains" }
+  ]
+}

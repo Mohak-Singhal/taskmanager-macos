@@ -9,11 +9,12 @@ struct SettingsView: View {
     private var bg: Color { cs == .dark ? Color(hex: "1E1E1E") : Color(hex: "F4F4F4") }
     private var cardBg: Color { cs == .dark ? Color(hex: "2B2B2B") : Color.white }
     private var accent: Color { Color(hex: "0078D7") }
+    private static let cachedDeviceHasUnifiedMemory = MTLCreateSystemDefaultDevice()?.hasUnifiedMemory ?? true
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: true) {
             VStack(alignment: .leading, spacing: 20) {
-                // Header
+                
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Settings")
                         .font(.system(size: 20, weight: .bold))
@@ -24,7 +25,7 @@ struct SettingsView: View {
                 }
                 .padding(.bottom, 10)
                 
-                // Section 1: Window Layout & Diagnostics
+                
                 settingsCard(title: "Window Size & Layout Diagnostics") {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Manually override the window size to test responsive design scaling across all aspect ratios:")
@@ -33,11 +34,11 @@ struct SettingsView: View {
                         
                         HStack(spacing: 12) {
                             Button(action: {
-                                resizeWindow(width: 500, height: 520)
+                                resizeWindow(width: 620, height: 520)
                             }) {
                                 HStack {
                                     Image(systemName: "arrow.down.right.and.arrow.up.left")
-                                    Text("Compact Mode (500x520)")
+                                    Text("Minimum Size (620x520)")
                                 }
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
@@ -65,7 +66,27 @@ struct SettingsView: View {
                     }
                 }
                 
-                // Section 2: General Options
+                settingsCard(title: "Update Speed (Refresh Interval)") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Choose how frequently system resource metrics and process tables are updated:")
+                            .font(.system(size: 11))
+                            .foregroundColor(.gray)
+                        
+                        Picker("Update speed", selection: Binding(
+                            get: { monitor.updateInterval },
+                            set: { monitor.setUpdateInterval($0) }
+                        )) {
+                            Text("Fast (0.5s)").tag(0.5)
+                            Text("Normal (1.0s)").tag(1.0)
+                            Text("Medium (2.0s)").tag(2.0)
+                            Text("Slow (5.0s)").tag(5.0)
+                            Text("Paused").tag(0.0)
+                        }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                    }
+                }
+                
                 settingsCard(title: "General Options") {
                     VStack(alignment: .leading, spacing: 10) {
                         Toggle(isOn: $monitor.alwaysOnTop) {
@@ -75,35 +96,15 @@ struct SettingsView: View {
                             }
                         }
                         .toggleStyle(.checkbox)
-                        
-                        Divider()
-                        
-                        Toggle(isOn: $monitor.minimizeOnUse) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Minimize on use").font(.system(size: 12, weight: .medium))
-                                Text("Minimize the Task Manager when a task action is run").font(.system(size: 10)).foregroundColor(.gray)
-                            }
-                        }
-                        .toggleStyle(.checkbox)
-                        
-                        Divider()
-                        
-                        Toggle(isOn: $monitor.hideWhenMinimized) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Hide when minimized").font(.system(size: 12, weight: .medium))
-                                Text("Hide the window in the system tray when minimized").font(.system(size: 10)).foregroundColor(.gray)
-                            }
-                        }
-                        .toggleStyle(.checkbox)
                     }
                 }
                 
-                // Section 3: Telemetry Diagnostics
+                
                 settingsCard(title: "Telemetry & Diagnostics") {
                     VStack(alignment: .leading, spacing: 8) {
                         diagnosticRow(label: "CPU Cores", value: "\(monitor.cpuPhysicalCores) Cores (\(monitor.cpuCores) Logical)")
                         diagnosticRow(label: "Host Architecture", value: getHostArchitecture())
-                        diagnosticRow(label: "Unified Memory", value: (MTLCreateSystemDefaultDevice()?.hasUnifiedMemory ?? true) ? "Yes (Apple Silicon)" : "No (Discrete VRAM)")
+                        diagnosticRow(label: "Unified Memory", value: Self.cachedDeviceHasUnifiedMemory ? "Yes (Apple Silicon)" : "No (Discrete VRAM)")
                         diagnosticRow(label: "System Up Time", value: uptimeString(monitor.uptime))
                     }
                 }
@@ -165,7 +166,7 @@ struct SettingsView: View {
             rect.size.width = width
             rect.size.height = height
             
-            // Keep window's top edge fixed
+            
             rect.origin.y = rect.origin.y + (oldHeight - height)
             
             window.setFrame(rect, display: true, animate: true)

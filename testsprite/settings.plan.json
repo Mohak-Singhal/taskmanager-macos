@@ -1,0 +1,22 @@
+{
+  "projectId": "taskmanager-native-test",
+  "type": "frontend",
+  "name": "Settings & Window Layout Workflow",
+  "description": "Verifies the Settings tab: refresh interval picker, window-size presets, general option toggles, and persistence across relaunch.",
+  "priority": "p2",
+  "planSteps": [
+    { "type": "action", "description": "Navigate to Settings" },
+    { "type": "assertion", "description": "Assert the update-speed segmented picker reflects the persisted interval" },
+    { "type": "action", "description": "Switch the update speed to Paused (0.0s)" },
+    { "type": "assertion", "description": "Assert CPU/memory/process tables stop refreshing until speed is restored" },
+    { "type": "action", "description": "Switch back to Normal (1.0s)" },
+    { "type": "assertion", "description": "Assert refresh resumes" },
+    { "type": "action", "description": "Click 'Minimum Size (620x520)'" },
+    { "type": "assertion", "description": "Assert the window resizes to the app minimum and no tab content is clipped" },
+    { "type": "action", "description": "Click 'Desktop Mode (1000x700)'" },
+    { "type": "assertion", "description": "Assert the window resizes and all tabs remain usable" },
+    { "type": "action", "description": "Toggle 'Always on top'" },
+    { "type": "assertion", "description": "Assert the toggle persists to UserDefaults and the window floats above other apps" },
+    { "type": "assertion", "description": "Assert no dead settings remain (Minimize on use / Hide when minimized were removed)" }
+  ]
+}

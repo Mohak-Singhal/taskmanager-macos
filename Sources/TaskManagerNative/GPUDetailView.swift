@@ -6,20 +6,42 @@ struct GPUDetailView: View {
     @EnvironmentObject var monitor: SystemMonitor
     @Environment(\.colorScheme) var cs
 
-    private var gpuName: String {
-        if #available(macOS 13.0, *) {
-            return MTLCreateSystemDefaultDevice()?.name ?? "Apple GPU"
+    private static let cachedDevice = MTLCreateSystemDefaultDevice()
+    private var gpuName: String { Self.cachedDevice?.name ?? "Apple GPU" }
+
+    private var gpuTemp: String {
+        if let t = SMC.shared.getGPUTemperature() {
+            return "\(Int(t.rounded()))°C"
         }
-        return MTLCreateSystemDefaultDevice()?.name ?? "Apple GPU"
+        return "—"
     }
 
     var body: some View {
         let accent = Color(hex: "00A2E8")
-        
+        let device  = Self.cachedDevice
+        let hasUnified = device?.hasUnifiedMemory ?? true
+        let maxSet     = device?.recommendedMaxWorkingSetSize ?? monitor.memory.total
+        let dedicatedStr = !hasUnified
+            ? ByteCountFormatter.string(fromByteCount: Int64(maxSet), countStyle: .binary)
+            : "N/A (Unified)"
+        let sharedStr = hasUnified
+            ? ByteCountFormatter.string(fromByteCount: Int64(maxSet), countStyle: .binary)
+            : ByteCountFormatter.string(fromByteCount: Int64(monitor.memory.total / 2), countStyle: .binary)
+        let metalVer: String = {
+            if #available(macOS 13.0, *), let d = device, d.supportsFamily(.metal3) { return "Metal 3" }
+            return "Metal 2"
+        }()
+        #if arch(arm64)
+        let physLoc = "On-Die (Unified)"
+        #else
+        let physLoc = "PCI slot 1"
+        #endif
+
         VStack(alignment: .leading, spacing: 0) {
-            // Title
+
+            
             HStack(alignment: .firstTextBaseline) {
-                Text("GPU")
+                Text("GPU 0")
                     .font(.system(size: 20, weight: .bold))
                     .foregroundColor(tc)
                 Spacer()
@@ -28,45 +50,45 @@ struct GPUDetailView: View {
                     .foregroundColor(.gray)
                     .lineLimit(1)
             }
-            .padding(.bottom, 12)
+            .padding(.bottom, 8)
 
-            // Chart
+            
             VStack(spacing: 0) {
                 HStack {
-                    Text("GPU Utilization").font(.system(size: 9)).foregroundColor(.gray)
+                    Text("GPU utilization").font(.system(size: 9)).foregroundColor(.gray)
                     Spacer()
                     Text("100%").font(.system(size: 9)).foregroundColor(.gray)
                 }
-                .padding(.bottom, 4)
-                
+                .padding(.bottom, 3)
+
                 Chart {
                     ForEach(Array(monitor.gpuHistory.enumerated()), id: \.offset) { i, v in
-                        AreaMark(x: .value("Time", i), y: .value("Value", v))
-                            .foregroundStyle(LinearGradient(colors: [accent.opacity(0.18), accent.opacity(0.01)], startPoint: .top, endPoint: .bottom))
+                        AreaMark(x: .value("t", i), y: .value("v", v))
+                            .foregroundStyle(LinearGradient(
+                                colors: [accent.opacity(0.22), accent.opacity(0.02)],
+                                startPoint: .top, endPoint: .bottom))
                     }
                     ForEach(Array(monitor.gpuHistory.enumerated()), id: \.offset) { i, v in
-                        LineMark(x: .value("Time", i), y: .value("Value", v))
+                        LineMark(x: .value("t", i), y: .value("v", v))
                             .foregroundStyle(accent)
-                            .lineStyle(StrokeStyle(lineWidth: 1.2))
+                            .lineStyle(StrokeStyle(lineWidth: 1.3))
                     }
                 }
                 .chartYScale(domain: 0...100)
                 .chartXAxis {
                     AxisMarks(values: .stride(by: 10)) { _ in
-                        AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                            .foregroundStyle(Color.gray.opacity(cs == .dark ? 0.25 : 0.15))
+                        AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(gridColor)
                     }
                 }
                 .chartYAxis {
                     AxisMarks(values: .stride(by: 25)) { _ in
-                        AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                            .foregroundStyle(Color.gray.opacity(cs == .dark ? 0.25 : 0.15))
+                        AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(gridColor)
                         AxisValueLabel().font(.system(size: 8)).foregroundStyle(.gray)
                     }
                 }
-                .frame(minHeight: 120, maxHeight: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(4)
-                .background(cs == .dark ? Color(hex: "1E1E1E") : Color.white)
+                .background(chartBg)
                 .border(Color.gray.opacity(0.2), width: 1)
 
                 HStack {
@@ -74,115 +96,58 @@ struct GPUDetailView: View {
                     Spacer()
                     Text("0").font(.system(size: 9)).foregroundColor(.gray)
                 }
-                .padding(.top, 4)
+                .padding(.top, 3)
             }
-            .frame(maxHeight: .infinity)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            // Stats Grid - Clean horizontal rows stacking
-            let gpuTemp = "\(Int(40 + monitor.gpuUsage * 0.5))°C"
-            let physicalLocation = monitor.cpuBrand.lowercased().contains("m") ? "On-Die (Unified)" : "PCI slot 1"
             
-            // Dynamic VRAM and Shared memory calculations using Metal
-            let device = MTLCreateSystemDefaultDevice()
-            let hasUnified = device?.hasUnifiedMemory ?? true
-            let maxSet = device?.recommendedMaxWorkingSetSize ?? monitor.memory.total
-            let dedicatedMemoryStr = !hasUnified ? ByteCountFormatter.string(fromByteCount: Int64(maxSet), countStyle: .binary) : "0.00 GB"
-            let sharedMemoryStr = hasUnified ? ByteCountFormatter.string(fromByteCount: Int64(maxSet), countStyle: .binary) : ByteCountFormatter.string(fromByteCount: Int64(monitor.memory.total / 2), countStyle: .binary)
-            
-            let metalVersion: String = {
-                if #available(macOS 13.0, *), let dev = device {
-                    if dev.supportsFamily(.metal3) { return "Metal 3" }
-                }
-                return "Metal 2"
-            }()
+            Divider().padding(.vertical, 8)
 
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .top, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack(spacing: 16) {
-                            largeStat("GPU Utilization", "\(Int(monitor.gpuUsage))%", size: 26)
-                            largeStat("GPU Temp", gpuTemp, size: 26)
-                            Spacer(minLength: 0)
-                        }
-                        HStack(spacing: 16) {
-                            largeStat("Dedicated memory", dedicatedMemoryStr, size: 20)
-                            largeStat("Shared memory", sharedMemoryStr, size: 20)
-                            Spacer(minLength: 0)
-                        }
+            HStack(alignment: .top, spacing: 0) {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(alignment: .bottom, spacing: 24) {
+                        statPill("Utilization", "\(Int(monitor.gpuUsage))%", large: true)
+                        statPill("Temperature",  gpuTemp, large: true)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    
-                    VStack(alignment: .leading, spacing: 3) {
-                        infoRow("Driver version:", ProcessInfo.processInfo.operatingSystemVersionString)
-                        infoRow("Driver date:", "System Embedded")
-                        infoRow("Metal support:", metalVersion)
-                        infoRow("Physical location:", physicalLocation)
+                    HStack(alignment: .bottom, spacing: 24) {
+                        statPill("Dedicated memory", dedicatedStr)
+                        statPill("Shared memory",    sharedStr)
                     }
-                    .frame(minWidth: 160, maxWidth: 220, alignment: .leading)
                 }
-                .frame(minWidth: 500)
-                
-                VStack(alignment: .leading, spacing: 16) {
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack(spacing: 16) {
-                            largeStat("GPU Utilization", "\(Int(monitor.gpuUsage))%", size: 26)
-                            largeStat("GPU Temp", gpuTemp, size: 26)
-                            Spacer(minLength: 0)
-                        }
-                        HStack(spacing: 16) {
-                            largeStat("Dedicated memory", dedicatedMemoryStr, size: 20)
-                            largeStat("Shared memory", sharedMemoryStr, size: 20)
-                            Spacer(minLength: 0)
-                        }
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 3) {
-                        infoRow("Driver version:", ProcessInfo.processInfo.operatingSystemVersionString)
-                        infoRow("Driver date:", "System Embedded")
-                        infoRow("Metal support:", metalVersion)
-                        infoRow("Physical location:", physicalLocation)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    infoRow("OS version:", ProcessInfo.processInfo.operatingSystemVersionString)
+                    infoRow("Metal support:", metalVer)
+                    infoRow("Physical location:", physLoc)
                 }
+                .frame(width: 210, alignment: .leading)
             }
-            .padding(.top, 16)
-
-            Spacer(minLength: 0)
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
+        .padding(.bottom, 12)
     }
 
     private var tc: Color { cs == .dark ? .white : .black }
+    private var gridColor: Color { Color.gray.opacity(cs == .dark ? 0.25 : 0.15) }
+    private var chartBg: Color { cs == .dark ? Color(hex: "1A1A1A") : Color.white }
 
-    private func largeStat(_ label: String, _ val: String, size: CGFloat = 24) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(label)
-                .font(.system(size: 10, weight: .regular))
-                .foregroundColor(.gray)
-                .lineLimit(1)
+    private func statPill(_ label: String, _ val: String, large: Bool = false) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(label).font(.system(size: 10)).foregroundColor(.gray).lineLimit(1)
             Text(val)
-                .font(.system(size: size, weight: .regular))
-                .foregroundColor(tc)
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
+                .font(.system(size: large ? 26 : 18, weight: .light))
+                .foregroundColor(tc).lineLimit(1).minimumScaleFactor(0.6)
         }
-        .frame(minWidth: 90, alignment: .leading)
     }
 
     private func infoRow(_ label: String, _ value: String) -> some View {
         HStack(spacing: 4) {
-            Text(label)
-                .font(.system(size: 10))
-                .foregroundColor(.gray)
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
-                .frame(minWidth: 80, alignment: .leading)
-            Text(value)
-                .font(.system(size: 10))
-                .foregroundColor(tc)
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
+            Text(label).font(.system(size: 10)).foregroundColor(.gray)
+                .lineLimit(1).minimumScaleFactor(0.75).frame(minWidth: 100, alignment: .leading)
+            Text(value).font(.system(size: 10)).foregroundColor(tc)
+                .lineLimit(1).minimumScaleFactor(0.75)
             Spacer(minLength: 0)
         }
     }

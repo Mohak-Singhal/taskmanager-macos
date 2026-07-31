@@ -17,7 +17,7 @@ jobs:
         run: sudo xcode-select -s /Applications/Xcode_16.app/Contents/Developer
 
       - name: Build
-        run: swift build
+        run: swift build -Xswiftc -warnings-as-errors
 
       - name: Test
-        run: swift test
+        run: swift test -Xswiftc -warnings-as-errors

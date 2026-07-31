@@ -14,10 +14,18 @@ struct TaskManagerApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(monitor)
+                .onAppear {
+                    MenuBarController.shared.setup(monitor: monitor)
+                }
+                .onChange(of: monitor.cpuUsage.total) { _, cpu in
+                    let memUsed = Double(monitor.memory.used)
+                    let memTotal = Double(max(monitor.memory.total, 1))
+                    MenuBarController.shared.update(cpu: cpu, mem: memUsed / memTotal * 100.0)
+                }
         }
         .windowResizability(.contentMinSize)
         .commands {
-            // ── Replace default File menu ──────────────────────────────
+            
             CommandGroup(replacing: .newItem) {
                 Button("Run new task…") {
                     NotificationCenter.default.post(name: .showRunDialog, object: nil)
@@ -32,17 +40,15 @@ struct TaskManagerApp: App {
                 .keyboardShortcut("q", modifiers: [.command])
             }
 
-            // ── Options menu (new, after File) ─────────────────────────
+            
             CommandMenu("Options") {
                 Toggle("Always on top", isOn: Binding(
                     get: { monitor.alwaysOnTop },
                     set: { monitor.setAlwaysOnTop($0) }
                 ))
-                Toggle("Minimize on use", isOn: $monitor.minimizeOnUse)
-                Toggle("Hide when minimized", isOn: $monitor.hideWhenMinimized)
             }
 
-            // ── View menu ──────────────────────────────────────────────
+            
             CommandMenu("View") {
                 Button("Refresh Now") {
                     monitor.tick()
@@ -57,12 +63,38 @@ struct TaskManagerApp: App {
                 }
             }
 
-            // ── Remove unwanted default menus ──────────────────────────
+            
             CommandGroup(replacing: .undoRedo) { }
             CommandGroup(replacing: .pasteboard) { }
             CommandGroup(replacing: .windowList) { }
             CommandGroup(replacing: .windowArrangement) { }
-            CommandGroup(replacing: .help) { }
+            CommandGroup(replacing: .help) {
+                Button("TaskManager Native Help") {
+                    if let url = URL(string: "https://support.apple.com") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@MainActor
+final class MenuBarController: NSObject {
+    static let shared = MenuBarController()
+    private var statusItem: NSStatusItem?
+
+    func setup(monitor: SystemMonitor) {
+        guard statusItem == nil else { return }
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        if let button = statusItem?.button {
+            button.title = "⚡ CPU: 0% RAM: 0%"
+        }
+    }
+
+    func update(cpu: Double, mem: Double) {
+        if let button = statusItem?.button {
+            button.title = String(format: "⚡ CPU: %.0f%% RAM: %.0f%%", cpu, mem)
         }
     }
 }

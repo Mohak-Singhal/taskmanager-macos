@@ -1,0 +1,16 @@
+{
+  "project": {
+    "name": "TaskManagerNative",
+    "description": "macOS Native Task Manager System Utility",
+    "language": "swift",
+    "platform": "macos"
+  },
+  "testSuite": {
+    "directory": "./testsprite",
+    "timeout": 120,
+    "environment": {
+      "TEST_ENV": "development",
+      "MOCK_AUTH": "true"
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "projectId": "taskmanager-native-test",
+  "type": "frontend",
+  "name": "Insights & Diagnostics Workflow",
+  "description": "Verifies the Insights & Diagnostics tab: bottleneck banner, System Health, Storage Growth, Power & Battery, and Network Privacy panels, plus the storage scan.",
+  "priority": "p1",
+  "planSteps": [
+    { "type": "action", "description": "Navigate to Insights & Diagnostics" },
+    { "type": "assertion", "description": "Assert the status banner shows 'System Healthy' or a diagnostic alert matching the bottleneck engine state" },
+    { "type": "action", "description": "Switch to the Storage Growth tab" },
+    { "type": "assertion", "description": "Assert folder growth rows display Name, Current Size, Growth Today, and Growth This Week" },
+    { "type": "action", "description": "Click 'Scan Disk Now'" },
+    { "type": "assertion", "description": "Assert the scan runs in the background without freezing the UI and the button disables while scanning" },
+    { "type": "action", "description": "Switch to Power & Battery tab" },
+    { "type": "assertion", "description": "Assert sleep blockers list and browser tab energy ranker render (or empty states)" },
+    { "type": "action", "description": "Switch to Network Privacy tab" },
+    { "type": "assertion", "description": "Assert telemetry alerts, today's top uploads, and contacted servers tables render from lsof output" },
+    { "type": "assertion", "description": "Assert the UI remains fully interactive during the 5-second telemetry refresh (lsof/pmset run off the main actor with timeouts)" }
+  ]
+}

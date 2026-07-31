@@ -18,6 +18,8 @@ struct MemoryStatus {
     var appMemory: UInt64 = 0
     var swapTotal: UInt64 = 0
     var swapUsed: UInt64 = 0
+    var pressurePercentage: Double = 0.0
+    var pressureLevel: String = "Normal"
 }
 
 struct NetworkIface: Identifiable {
@@ -87,12 +89,42 @@ struct MachProcess: Identifiable, Hashable {
     var idleWakeups: UInt64 = 0
     var energyImpact: Double = 0
     
+    var executablePath: String = ""
+    var architecture: String = "64-bit"
+    var tabName: String = ""
+    var parentAppName: String = ""
+    var workingDirectory: String = ""
+    
+    var powerUsage: String {
+        let val = cpu * 0.7 + energyImpact * 0.3
+        if val > 50 { return "Very high" }
+        if val > 20 { return "High" }
+        if val > 5 { return "Moderate" }
+        if val > 1 { return "Low" }
+        return "Very low"
+    }
+
+    var powerTrend: String {
+        let val = cpu * 0.5 + energyImpact * 0.5
+        if val > 40 { return "Very high" }
+        if val > 15 { return "High" }
+        if val > 4 { return "Moderate" }
+        if val > 0.8 { return "Low" }
+        return "Very low"
+    }
+
     func hash(into hasher: inout Hasher) {
         hasher.combine(pid)
     }
     static func == (lhs: MachProcess, rhs: MachProcess) -> Bool {
         lhs.pid == rhs.pid
     }
+}
+
+enum ProcessCategory {
+    case app
+    case background
+    case system
 }
 
 struct PowerSourceStatus {
@@ -121,8 +153,8 @@ struct StartupItem: Identifiable {
     var id: String { plistPath }
     var name: String
     var publisher: String
-    var status: String // "Enabled" or "Disabled"
-    var impact: String // "Low", "Medium", "High"
+    var status: String 
+    var impact: String 
     var plistPath: String
 }
 
@@ -137,18 +169,24 @@ struct LaunchdService: Identifiable {
 struct AppHistoryItem: Identifiable {
     var id: String { name }
     var name: String
-    var cpuTime: Double // in seconds
+    var cpuTime: Double 
     var networkBytes: UInt64
 }
 
-// Windows-style consumer level memory formatter helper
+
 func formatWinMem(_ bytes: UInt64) -> String {
     let gb = Double(bytes) / 1_073_741_824.0
     if gb >= 1.0 {
         return String(format: "%.2f GB", gb)
-    } else {
-        let mb = Double(bytes) / 1_048_576.0
+    }
+    let mb = Double(bytes) / 1_048_576.0
+    if mb >= 1.0 {
         return String(format: "%.1f MB", mb)
     }
+    let kb = Double(bytes) / 1024.0
+    if kb >= 1.0 {
+        return String(format: "%.0f KB", kb)
+    }
+    return "\(bytes) B"
 }
 

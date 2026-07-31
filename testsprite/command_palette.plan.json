@@ -1,0 +1,21 @@
+{
+  "projectId": "taskmanager-native-test",
+  "type": "frontend",
+  "name": "Command Palette Workflow",
+  "description": "Verifies Cmd+K palette: opening, navigation actions, process search, selection, and dismissal paths.",
+  "priority": "p2",
+  "planSteps": [
+    { "type": "action", "description": "Press Cmd+K" },
+    { "type": "assertion", "description": "Assert the palette opens with navigation actions and the top processes" },
+    { "type": "action", "description": "Type a process name or PID" },
+    { "type": "assertion", "description": "Assert matching processes appear with CPU% and PID" },
+    { "type": "action", "description": "Click a process result" },
+    { "type": "assertion", "description": "Assert the palette closes, the Processes tab opens, and that process is selected" },
+    { "type": "action", "description": "Click a navigation action (e.g. Go to Users & Sessions)" },
+    { "type": "assertion", "description": "Assert the palette closes and the target tab opens" },
+    { "type": "action", "description": "Reopen the palette and press ESC" },
+    { "type": "assertion", "description": "Assert the palette closes (ESC is now wired via onExitCommand)" },
+    { "type": "action", "description": "Click the dimmed backdrop" },
+    { "type": "assertion", "description": "Assert the palette closes" }
+  ]
+}

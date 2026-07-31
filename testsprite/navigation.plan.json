@@ -1,0 +1,57 @@
+{
+  "projectId": "taskmanager-native-test",
+  "type": "frontend",
+  "name": "TaskManager App Sidebar Navigation Plan",
+  "description": "Verifies that clicking each sidebar item successfully switches the active viewport and displays the relevant telemetry.",
+  "priority": "p1",
+  "planSteps": [
+    {
+      "type": "action",
+      "description": "Launch the TaskManagerNative application"
+    },
+    {
+      "type": "assertion",
+      "description": "Assert that the default tab is the 'Overview' dashboard displaying CPU and Memory meters"
+    },
+    {
+      "type": "action",
+      "description": "Click the 'Processes' item in the sidebar navigation"
+    },
+    {
+      "type": "assertion",
+      "description": "Assert that the process list table is populated and groups processes into Apps, Background, and System categories"
+    },
+    {
+      "type": "action",
+      "description": "Click the 'App History' item in the sidebar navigation"
+    },
+    {
+      "type": "assertion",
+      "description": "Assert that the list displays historical CPU and network metrics per application"
+    },
+    {
+      "type": "action",
+      "description": "Click the 'Startup Apps' item in the sidebar navigation"
+    },
+    {
+      "type": "assertion",
+      "description": "Assert that the startup items are resolved from native macOS launch services"
+    },
+    {
+      "type": "action",
+      "description": "Click the 'Services' item in the sidebar"
+    },
+    {
+      "type": "assertion",
+      "description": "Assert that the launchd services table is visible"
+    },
+    {
+      "type": "action",
+      "description": "Click the 'Insights & Diagnostics' item in the sidebar"
+    },
+    {
+      "type": "assertion",
+      "description": "Assert that the System Bottlenecks description, Storage grow tracker, and network connections are active"
+    }
+  ]
+}
