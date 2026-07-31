@@ -184,8 +184,8 @@ struct ProcessView: View {
                         }
                         .buttonStyle(.plain)
                         .foregroundColor(tc)
-                        .frame(minWidth: nameWidth, maxWidth: .infinity, alignment: .leading)
                         .padding(.leading, 56)
+                        .frame(minWidth: nameWidth, maxWidth: .infinity, alignment: .leading)
                     
                     ResizableDivider(width: $nameWidth, minWidth: 150)
                     
