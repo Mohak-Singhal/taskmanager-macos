@@ -28,7 +28,7 @@ struct DiskDetailView: View {
                     ? String(format: "%.1f ms", max(0.1, 0.4 + (disk.readRate + disk.writeRate) / (1024 * 1024 * 10.0))) 
                     : "0.1 ms"
 
-                
+                // Header
                 HStack(alignment: .firstTextBaseline) {
                     Text(disk.name)
                         .font(.system(size: 20, weight: .bold))
@@ -40,10 +40,10 @@ struct DiskDetailView: View {
                 }
                 .padding(.bottom, 8)
 
-                
+                // Charts Container (fills available space)
                 VStack(spacing: 8) {
 
-                    
+                    // Active Time Chart
                     VStack(spacing: 0) {
                         HStack {
                             Text("Active time").font(.system(size: 12)).foregroundColor(.gray)
@@ -74,14 +74,14 @@ struct DiskDetailView: View {
                                 AxisValueLabel().font(.system(size: 12)).foregroundStyle(.gray)
                             }
                         }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .frame(minHeight: 90, maxHeight: .infinity)
                         .padding(4)
                         .background(chartBg)
                         .border(Color.gray.opacity(0.2), width: 1)
                     }
-                    .frame(maxHeight: .infinity)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                    
+                    // Disk Transfer Rate Chart
                     VStack(spacing: 0) {
                         HStack {
                             Text("Disk transfer rate").font(.system(size: 12)).foregroundColor(.gray)
@@ -110,18 +110,18 @@ struct DiskDetailView: View {
                                 AxisValueLabel().font(.system(size: 12)).foregroundStyle(.gray)
                             }
                         }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .frame(minHeight: 90, maxHeight: .infinity)
                         .padding(4)
                         .background(chartBg)
                         .border(Color.gray.opacity(0.2), width: 1)
                     }
-                    .frame(maxHeight: .infinity)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                .frame(maxHeight: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                
                 Divider().padding(.vertical, 8)
 
+                // Bottom Section
                 HStack(alignment: .top, spacing: 0) {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack(alignment: .bottom, spacing: 20) {
@@ -144,10 +144,10 @@ struct DiskDetailView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .padding(.top, 2)
 
             } else {
                 Text("No disks found").foregroundColor(.gray)
-                Spacer(minLength: 0)
             }
         }
         .padding(.horizontal, 16)

@@ -12,7 +12,7 @@ struct PowerDetailView: View {
 
         VStack(alignment: .leading, spacing: 0) {
 
-            
+            // Header
             HStack(alignment: .firstTextBaseline) {
                 Text("Power")
                     .font(.system(size: 20, weight: .bold))
@@ -25,7 +25,7 @@ struct PowerDetailView: View {
             }
             .padding(.bottom, 8)
 
-            
+            // Chart (Balanced ~200px Height)
             VStack(spacing: 0) {
                 HStack {
                     Text("Energy Impact").font(.system(size: 12)).foregroundColor(.gray)
@@ -59,7 +59,7 @@ struct PowerDetailView: View {
                         AxisValueLabel().font(.system(size: 12)).foregroundStyle(.gray)
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(minHeight: 160, maxHeight: .infinity)
                 .padding(4)
                 .background(chartBg)
                 .border(Color.gray.opacity(0.2), width: 1)
@@ -73,9 +73,9 @@ struct PowerDetailView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            
             Divider().padding(.vertical, 8)
 
+            // Bottom Section
             HStack(alignment: .top, spacing: 0) {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(alignment: .bottom, spacing: 24) {
@@ -109,6 +109,7 @@ struct PowerDetailView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .padding(.top, 2)
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)

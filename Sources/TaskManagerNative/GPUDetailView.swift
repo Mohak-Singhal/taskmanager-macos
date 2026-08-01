@@ -39,7 +39,7 @@ struct GPUDetailView: View {
 
         VStack(alignment: .leading, spacing: 0) {
 
-            
+            // Header
             HStack(alignment: .firstTextBaseline) {
                 Text("GPU 0")
                     .font(.system(size: 20, weight: .bold))
@@ -52,7 +52,7 @@ struct GPUDetailView: View {
             }
             .padding(.bottom, 8)
 
-            
+            // Chart (Fills available space)
             VStack(spacing: 0) {
                 HStack {
                     Text("GPU utilization").font(.system(size: 12)).foregroundColor(.gray)
@@ -86,7 +86,7 @@ struct GPUDetailView: View {
                         AxisValueLabel().font(.system(size: 12)).foregroundStyle(.gray)
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(minHeight: 160, maxHeight: .infinity)
                 .padding(4)
                 .background(chartBg)
                 .border(Color.gray.opacity(0.2), width: 1)
@@ -100,9 +100,9 @@ struct GPUDetailView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            
             Divider().padding(.vertical, 8)
 
+            // Bottom Section
             HStack(alignment: .top, spacing: 0) {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(alignment: .bottom, spacing: 24) {
@@ -123,6 +123,7 @@ struct GPUDetailView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .padding(.top, 2)
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)

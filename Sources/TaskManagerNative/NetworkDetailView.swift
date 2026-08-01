@@ -20,7 +20,6 @@ struct NetworkDetailView: View {
 
         VStack(alignment: .leading, spacing: 0) {
 
-            
             if let iface = iface {
                 HStack(alignment: .firstTextBaseline) {
                     Text(iface.displayName)
@@ -32,7 +31,6 @@ struct NetworkDetailView: View {
                 }
                 .padding(.bottom, 8)
 
-                
                 VStack(spacing: 0) {
                     HStack {
                         Text("Throughput").font(.system(size: 12)).foregroundColor(.gray)
@@ -89,7 +87,7 @@ struct NetworkDetailView: View {
                             AxisValueLabel().font(.system(size: 12)).foregroundStyle(.gray)
                         }
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .frame(minHeight: 160, maxHeight: .infinity)
                     .padding(4)
                     .background(chartBg)
                     .border(Color.gray.opacity(0.2), width: 1)
@@ -103,7 +101,6 @@ struct NetworkDetailView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                
                 Divider().padding(.vertical, 8)
 
                 HStack(alignment: .top, spacing: 0) {
@@ -127,10 +124,10 @@ struct NetworkDetailView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .padding(.top, 2)
 
             } else {
                 Text("No network interfaces found").foregroundColor(.gray)
-                Spacer(minLength: 0)
             }
         }
         .padding(.horizontal, 16)

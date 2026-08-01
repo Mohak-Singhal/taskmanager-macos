@@ -2,244 +2,215 @@ import SwiftUI
 import Charts
 
 struct CPUDetailView: View {
-    @EnvironmentObject var m: SystemMonitor
+    @EnvironmentObject var monitor: SystemMonitor
     @Environment(\.colorScheme) var cs
-    @State private var viewLogicalProcessors = false
+
+    @State private var viewMode: Int = 0 // 0: Overall, 1: Logical cores
+
+    private var tc: Color { cs == .dark ? .white : .black }
+    private var gridColor: Color { Color.gray.opacity(cs == .dark ? 0.25 : 0.15) }
+    private var chartBg: Color { cs == .dark ? Color(hex: "1A1A1A") : Color.white }
+
+    private func formatUptime(_ t: time_t) -> String {
+        let days = t / 86400
+        let hours = (t % 86400) / 3600
+        let mins = (t % 3600) / 60
+        let secs = t % 60
+        if days > 0 { return "\(days)d \(hours)h \(mins)m" }
+        if hours > 0 { return "\(hours)h \(mins)m \(secs)s" }
+        return "\(mins)m \(secs)s"
+    }
 
     var body: some View {
-        let accent = Color(hex: "0078D7")
+        let u = monitor.cpuUsage
+        let totalPctString = String(format: "%.1f%%", u.total)
+        let uptimeString = formatUptime(monitor.uptime)
+        let freqString = monitor.cpuSpeedString
+        let numProcesses = monitor.processes.count
+        let numThreads = monitor.processes.reduce(0) { $0 + $1.threads }
+        let handles = monitor.totalHandles
+        let physCores = monitor.cpuPhysicalCores
+        let logCores = monitor.cpuCores
+        let isVirt = monitor.virtualizationEnabled
+        let l1 = monitor.l1Cache
+        let l2 = monitor.l2Cache
+        let l3 = monitor.l3Cache
 
         VStack(alignment: .leading, spacing: 0) {
             
+            // Header
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("CPU")
                         .font(.system(size: 20, weight: .bold))
                         .foregroundColor(tc)
-                    Text(m.cpuBrand)
+                    Text(monitor.cpuBrand)
                         .font(.system(size: 12))
                         .foregroundColor(.gray)
                         .lineLimit(1)
                 }
                 Spacer()
-                
-                Picker("", selection: $viewLogicalProcessors) {
-                    Text("Overall utilization").tag(false)
-                    Text("Logical processors").tag(true)
+
+                Picker("", selection: $viewMode) {
+                    Text("Overall utilization").tag(0)
+                    Text("Logical processors").tag(1)
                 }
                 .pickerStyle(.segmented)
-                .frame(width: 220)
+                .frame(width: 260)
             }
             .padding(.bottom, 8)
 
-            
-            VStack(spacing: 0) {
-                HStack {
-                    if viewLogicalProcessors {
-                        Text("% Utilization per logical processor").font(.system(size: 12, weight: .semibold)).foregroundColor(.gray)
-                    } else {
-                        HStack(spacing: 12) {
-                            Text("% Utilization").font(.system(size: 12, weight: .semibold)).foregroundColor(.gray)
-                            HStack(spacing: 4) {
-                                Circle().fill(accent).frame(width: 6, height: 6)
-                                Text("Total: \(Int(m.cpuUsage.total))%").font(.system(size: 12, weight: .bold)).foregroundColor(tc)
-                            }
-                            HStack(spacing: 4) {
-                                Circle().fill(Color.purple).frame(width: 6, height: 6)
-                                Text("User: \(Int(m.cpuUsage.user))%").font(.system(size: 12)).foregroundColor(.gray)
-                            }
-                            HStack(spacing: 4) {
-                                Circle().fill(Color.orange).frame(width: 6, height: 6)
-                                Text("System: \(Int(m.cpuUsage.system))%").font(.system(size: 12)).foregroundColor(.gray)
-                            }
-                        }
-                    }
-                    Spacer()
-                    Text("100%").font(.system(size: 12)).foregroundColor(.gray)
-                }
-                .padding(.bottom, 3)
-
-                if viewLogicalProcessors {
-                    let colCount = min(max(m.cpuCores / 2, 2), 4)
-                    let cols = Array(repeating: GridItem(.flexible(), spacing: 4), count: colCount)
-                    GeometryReader { geo in
-                        ScrollView(.vertical, showsIndicators: true) {
-                            let numCores = m.perCoreCPUHistory.count
-                            let rowCount = max(1, Int(ceil(Double(numCores) / Double(colCount))))
-                            let spacingSum = CGFloat(rowCount - 1) * 6
-                            let calculatedHeight = (geo.size.height - spacingSum - 4) / CGFloat(rowCount)
-                            let cellHeight = max(52, calculatedHeight)
-                            
-                            LazyVGrid(columns: cols, spacing: 6) {
-                                ForEach(0..<numCores, id: \.self) { idx in
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        HStack {
-                                            Text("CPU \(idx)").font(.system(size: 12, weight: .bold)).foregroundColor(.gray)
-                                            Spacer()
-                                            Text("\(Int(m.perCoreCPUHistory[idx].last ?? 0))%").font(.system(size: 12)).foregroundColor(.gray)
-                                        }
-                                        Chart {
-                                            let history = m.perCoreCPUHistory[idx]
-                                            ForEach(Array(history.enumerated()), id: \.offset) { i, v in
-                                                AreaMark(x: .value("t", i), y: .value("v", v))
-                                                    .foregroundStyle(LinearGradient(
-                                                        colors: [accent.opacity(0.25), accent.opacity(0.02)],
-                                                        startPoint: .top, endPoint: .bottom))
-                                            }
-                                            ForEach(Array(history.enumerated()), id: \.offset) { i, v in
-                                                LineMark(x: .value("t", i), y: .value("v", v))
-                                                    .foregroundStyle(accent)
-                                                    .lineStyle(StrokeStyle(lineWidth: 1.0))
-                                            }
-                                        }
-                                        .chartYScale(domain: 0...100)
-                                        .chartXAxis(.hidden)
-                                        .chartYAxis(.hidden)
-                                        .frame(height: max(28, cellHeight - 16))
-                                        .background(chartBg)
-                                        .border(Color.gray.opacity(0.2), width: 0.5)
-                                    }
-                                    .frame(height: cellHeight)
-                                }
-                            }
-                            .padding(2)
-                        }
-                    }
+            // Main Chart Section (fills remaining vertical space)
+            Group {
+                if viewMode == 0 {
+                    overallChartView(history: monitor.cpuHistory)
                 } else {
-                    Chart {
-                        ForEach(Array(m.systemCPUHistory.enumerated()), id: \.offset) { i, v in
-                            LineMark(
-                                x: .value("t", i),
-                                y: .value("v", v),
-                                series: .value("Series", "System")
-                            )
-                            .foregroundStyle(Color.orange)
-                            .lineStyle(StrokeStyle(lineWidth: 1.1))
-                        }
-                        ForEach(Array(m.userCPUHistory.enumerated()), id: \.offset) { i, v in
-                            LineMark(
-                                x: .value("t", i),
-                                y: .value("v", v),
-                                series: .value("Series", "User")
-                            )
-                            .foregroundStyle(Color.purple)
-                            .lineStyle(StrokeStyle(lineWidth: 1.1))
-                        }
-                        ForEach(Array(m.cpuHistory.enumerated()), id: \.offset) { i, v in
-                            AreaMark(
-                                x: .value("t", i),
-                                y: .value("v", v),
-                                series: .value("Series", "Total")
-                            )
-                            .foregroundStyle(LinearGradient(
-                                colors: [accent.opacity(0.12), accent.opacity(0.01)],
-                                startPoint: .top, endPoint: .bottom))
-                        }
-                        ForEach(Array(m.cpuHistory.enumerated()), id: \.offset) { i, v in
-                            LineMark(
-                                x: .value("t", i),
-                                y: .value("v", v),
-                                series: .value("Series", "Total")
-                            )
-                            .foregroundStyle(accent)
-                            .lineStyle(StrokeStyle(lineWidth: 1.5))
-                        }
-                    }
-                    .chartYScale(domain: 0...100)
-                    .chartXAxis {
-                        AxisMarks(values: .stride(by: 10)) { _ in
-                            AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                                .foregroundStyle(gridColor)
-                        }
-                    }
-                    .chartYAxis {
-                        AxisMarks(values: .stride(by: 25)) { _ in
-                            AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                                .foregroundStyle(gridColor)
-                            AxisValueLabel().font(.system(size: 12)).foregroundStyle(.gray)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)  
-                    .padding(4)
-                    .background(chartBg)
-                    .border(Color.gray.opacity(0.2), width: 1)
+                    perCoreGridView(histories: monitor.perCoreCPUHistory)
                 }
-
-                HStack {
-                    Text("60 seconds").font(.system(size: 12)).foregroundColor(.gray)
-                    Spacer()
-                    Text("0").font(.system(size: 12)).foregroundColor(.gray)
-                }
-                .padding(.top, 3)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            
             Divider().padding(.vertical, 8)
 
+            // Bottom Telemetry Section
             HStack(alignment: .top, spacing: 0) {
-                
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(alignment: .bottom, spacing: 24) {
-                        statPill("Utilization", "\(Int(m.cpuUsage.total))%", large: true)
-                        statPill("User CPU", "\(Int(m.cpuUsage.user))%", large: true)
-                        statPill("System CPU", "\(Int(m.cpuUsage.system))%", large: true)
-                        statPill("Speed", activeSpeedString(), large: true)
+                        statPill("Utilization", totalPctString, large: true)
+                        statPill("Speed",       freqString, large: true)
                     }
                     HStack(alignment: .bottom, spacing: 24) {
-                        statPill("Processes", "\(m.processes.count)")
-                        statPill("Threads", "\(m.processes.reduce(0) { $0 + $1.threads })")
-                        statPill("Handles", "\(m.totalHandles)")
-                        statPill("Up time", uptimeString(m.uptime))
-                    }
-                    HStack(alignment: .bottom, spacing: 24) {
-                        statPill("Efficiency Cores (E)", "\(m.efficiencyCoreCount) Cores")
-                        statPill("Performance Cores (P)", "\(m.perfCoreCount) Cores")
-                    }
-                    HStack(alignment: .bottom, spacing: 24) {
-                        statPill("CPU Temperature", m.cpuTemperature > 0 ? String(format: "%.1f°C", m.cpuTemperature) : "N/A")
-                        statPill("GPU Temperature", m.gpuTemperature > 0 ? String(format: "%.1f°C", m.gpuTemperature) : "N/A")
-                        if m.fanSpeed > 0 {
-                            statPill("System Fan Speed", "\(Int(m.fanSpeed)) RPM")
-                        }
+                        statPill("Processes",   "\(numProcesses)")
+                        statPill("Threads",     "\(numThreads)")
+                        statPill("Handles",     "\(handles)")
+                        statPill("Up time",     uptimeString)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                
                 VStack(alignment: .leading, spacing: 3) {
-                    infoRow("Base speed:", m.baseSpeed)
-                    infoRow("Sockets:", "\(m.cpuSockets)")
-                    infoRow("Cores:", "\(m.cpuPhysicalCores)")
-                    infoRow("Logical processors:", "\(m.cpuCores)")
-                    infoRow("Virtualization:", m.virtualizationEnabled ? "Enabled" : "Disabled")
-                    infoRow("L1 cache:", m.l1Cache)
-                    infoRow("L2 cache:", m.l2Cache)
-                    infoRow("L3 cache:", m.l3Cache)
+                    infoRow("Base speed:",    freqString)
+                    infoRow("Sockets:",       "1")
+                    infoRow("Cores:",         "\(physCores)")
+                    infoRow("Logical processors:", "\(logCores)")
+                    infoRow("Virtualization:", isVirt ? "Enabled" : "Disabled")
+                    infoRow("L1 cache:",      l1)
+                    infoRow("L2 cache:",      l2)
+                    infoRow("L3 cache:",      l3)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .padding(.top, 2)
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
         .padding(.bottom, 12)
     }
 
-    
+    @ViewBuilder
+    private func overallChartView(history: [Double]) -> some View {
+        let accent = Color(hex: "0078D7")
+        VStack(spacing: 0) {
+            HStack {
+                Text("% Utilization").font(.system(size: 12)).foregroundColor(.gray)
+                Spacer()
+                Text("100%").font(.system(size: 12)).foregroundColor(.gray)
+            }
+            .padding(.bottom, 3)
 
-    private var tc: Color { cs == .dark ? .white : .black }
-    private var gridColor: Color { Color.gray.opacity(cs == .dark ? 0.25 : 0.15) }
-    private var chartBg: Color { cs == .dark ? Color(hex: "1A1A1A") : Color.white }
+            Chart {
+                ForEach(Array(history.enumerated()), id: \.offset) { i, v in
+                    AreaMark(
+                        x: .value("t", i),
+                        y: .value("v", v),
+                        series: .value("Series", "Total")
+                    )
+                    .foregroundStyle(LinearGradient(
+                        colors: [accent.opacity(0.22), accent.opacity(0.02)],
+                        startPoint: .top, endPoint: .bottom))
+                }
+                ForEach(Array(history.enumerated()), id: \.offset) { i, v in
+                    LineMark(
+                        x: .value("t", i),
+                        y: .value("v", v),
+                        series: .value("Series", "Total")
+                    )
+                    .foregroundStyle(accent)
+                    .lineStyle(StrokeStyle(lineWidth: 1.5))
+                }
+            }
+            .chartYScale(domain: 0...100)
+            .chartXAxis {
+                AxisMarks(values: .stride(by: 10)) { _ in
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
+                        .foregroundStyle(gridColor)
+                }
+            }
+            .chartYAxis {
+                AxisMarks(values: .stride(by: 25)) { _ in
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
+                        .foregroundStyle(gridColor)
+                    AxisValueLabel().font(.system(size: 12)).foregroundStyle(.gray)
+                }
+            }
+            .frame(minHeight: 160, maxHeight: .infinity)
+            .padding(4)
+            .background(chartBg)
+            .border(Color.gray.opacity(0.2), width: 1)
 
-    private func activeSpeedString() -> String {
-        let s = m.baseSpeed.replacingOccurrences(of: " GHz", with: "").replacingOccurrences(of: " MHz", with: "")
-        guard let base = Double(s) else { return m.baseSpeed }
-        return String(format: "%.2f GHz", base * (0.6 + 0.4 * (m.cpuUsage.total / 100.0)))
+            HStack {
+                Text("60 seconds").font(.system(size: 12)).foregroundColor(.gray)
+                Spacer()
+                Text("0").font(.system(size: 12)).foregroundColor(.gray)
+            }
+            .padding(.top, 3)
+        }
     }
 
-    private func uptimeString(_ t: time_t) -> String {
-        let d = Int(t)
-        return String(format: "%d:%02d:%02d:%02d", d / 86400, (d % 86400) / 3600, (d % 3600) / 60, d % 60)
+    @ViewBuilder
+    private func perCoreGridView(histories: [[Double]]) -> some View {
+        let accent = Color(hex: "0078D7")
+        ScrollView {
+            let cols = [GridItem(.adaptive(minimum: 100), spacing: 8)]
+            LazyVGrid(columns: cols, spacing: 8) {
+                ForEach(0..<histories.count, id: \.self) { coreIdx in
+                    let history = histories[coreIdx]
+                    let currentVal = history.last ?? 0
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack {
+                            Text("Core \(coreIdx)")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.gray)
+                            Spacer()
+                            Text(String(format: "%.0f%%", currentVal))
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundColor(tc)
+                        }
+
+                        Chart {
+                            ForEach(Array(history.enumerated()), id: \.offset) { i, v in
+                                AreaMark(x: .value("t", i), y: .value("v", v))
+                                    .foregroundStyle(LinearGradient(
+                                        colors: [accent.opacity(0.3), accent.opacity(0.02)],
+                                        startPoint: .top, endPoint: .bottom))
+                                LineMark(x: .value("t", i), y: .value("v", v))
+                                    .foregroundStyle(accent)
+                                    .lineStyle(StrokeStyle(lineWidth: 1.0))
+                            }
+                        }
+                        .chartYScale(domain: 0...100)
+                        .chartXAxis(.hidden)
+                        .chartYAxis(.hidden)
+                        .frame(minHeight: 40, maxHeight: .infinity)
+                    }
+                    .padding(6)
+                    .background(chartBg)
+                    .border(Color.gray.opacity(0.2), width: 1)
+                }
+            }
+            .padding(2)
+        }
+        .frame(minHeight: 180, maxHeight: .infinity)
     }
 
     private func statPill(_ label: String, _ val: String, large: Bool = false) -> some View {
@@ -254,7 +225,7 @@ struct CPUDetailView: View {
     private func infoRow(_ label: String, _ value: String) -> some View {
         HStack(spacing: 4) {
             Text(label).font(.system(size: 12)).foregroundColor(.gray)
-                .lineLimit(1).minimumScaleFactor(0.75).frame(minWidth: 100, alignment: .leading)
+                .lineLimit(1).minimumScaleFactor(0.75).frame(minWidth: 110, alignment: .leading)
             Text(value).font(.system(size: 12)).foregroundColor(tc)
                 .lineLimit(1).minimumScaleFactor(0.75)
             Spacer(minLength: 0)

@@ -18,6 +18,7 @@ class SystemMonitor: ObservableObject {
     @Published var userCPUHistory: [Double] = Array(repeating: 0, count: 60)
     @Published var memory = MemoryStatus()
     @Published var memoryHistory: [Double] = Array(repeating: 0, count: 60)
+    @Published var memoryPressureHistory: [Double] = Array(repeating: 0, count: 60)
     @Published var disks: [DiskInfo] = []
     @Published var diskHistory: [String: [Double]] = [:]
     @Published var diskTotalHistory: [Double] = Array(repeating: 0, count: 60)
@@ -531,7 +532,17 @@ class SystemMonitor: ObservableObject {
             memory.swapTotal = usage.xsu_total
             memory.swapUsed = usage.xsu_used
         }
-        memoryHistory = Array(memoryHistory.dropFirst()) + [(total > 0 ? Double(used)/Double(total)*100 : 0)]
+        let usedPct = total > 0 ? Double(used)/Double(total)*100 : 0
+        if memoryHistory.allSatisfy({ $0 == 0 }) && usedPct > 0 {
+            memoryHistory = Array(repeating: usedPct, count: 60)
+        } else {
+            memoryHistory = Array(memoryHistory.dropFirst()) + [usedPct]
+        }
+        if memoryPressureHistory.allSatisfy({ $0 == 0 }) && pressurePercent >= 0 {
+            memoryPressureHistory = Array(repeating: pressurePercent, count: 60)
+        } else {
+            memoryPressureHistory = Array(memoryPressureHistory.dropFirst()) + [pressurePercent]
+        }
     }
 
     
